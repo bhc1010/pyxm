@@ -1,0 +1,87 @@
+QFrame#toolbar {
+    background: #669df6;    
+    border-radius: 13px;
+    border: 0px;
+    padding-left: 15px;
+    padding-right: 15px;
+    height: 30px;
+}
+
+QFrame#toolbar QPushButton {
+    border: 0px;
+    color: white;
+    background: #669df6;
+    height: 30px;
+}
+
+QPushButton#play {
+    border-radius: 0px;
+    border-top-left-radius: 13px;
+    border-bottom-left-radius: 13px;
+    padding-right: 5px;
+    padding-left: 13px;
+}
+
+QPushButton#play:hover {
+    background: #ff6333;
+}
+
+QPushButton#pause {
+    border-radius: 0px;
+    padding-left: 5px;
+    padding-right: 5px;
+}
+
+QPushButton#pause:hover {
+    background: #ff6333;
+}
+
+QPushButton#stop {
+    border-radius: 0px;
+    border-top-right-radius: 13px;
+    border-bottom-right-radius: 13px;
+    padding-left: 5px;
+    padding-right: 13px;
+}
+
+QPushButton#stop:hover {
+    background: #ff6333;
+}
+
+QPushButton#menu, QPushButton#settings {
+    border-radius: 13px;
+    width: 10px;
+}
+
+QLineEdit#task_name {
+    background: white;
+    border-radius: 0px;
+}
+
+QPushButton#add_task_btn {
+    background: #669df6;
+    border-radius: 0px;
+    color: white;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+QFrame#options_frame, QFrame#task_list_frame {
+    border: 0px;
+}
+
+QComboBox {
+    background: white;
+    border-radius: 0px;
+}
+
+QGroupBox:flat {
+    margin-top: 10px;
+    border-top: 1px solid #dadce0;
+    border-radius: 0px;
+}
+
+ScientificSpinBox {
+    background: white;
+    border-radius: 0px;
+}
