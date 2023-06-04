@@ -1,16 +1,16 @@
 from enum import Enum
 
 from PySide6 import QtCore, QtGui, QtWidgets
-from PySide6.QtGui import QColor
-from PySide6.QtCore import Qt, QSize, QRect, QPropertyAnimation, Property, QObject, QParallelAnimationGroup
-from PySide6.QtWidgets import QGridLayout, QLabel, QLineEdit, QPushButton, QFrame, QWidget, QVBoxLayout, QScrollArea, QSizePolicy
+from PySide6.QtGui import *
+from PySide6.QtCore import *
+from PySide6.QtWidgets import *
 
 import qtawesome as fa
 
 def clamp10(value):
     return max(min(value, 1.0), 0.0)
 
-class TaskBar(QtWidgets.QWidget):
+class TaskBar(QWidget):
     def __init__(self, value = 0.5, padding = 5, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -38,7 +38,7 @@ class TaskBar(QtWidgets.QWidget):
         brush = QtGui.QBrush()
         brush.setStyle(Qt.SolidPattern)
         path = QtGui.QPainterPath()
-
+        
         # Background
         brush.setColor(self.color)
         path.addRoundedRect(self._paint_rect, 15, 15)
@@ -54,7 +54,7 @@ class TaskBar(QtWidgets.QWidget):
         painter.fillPath(path, brush)
 
 
-class Task(QtWidgets.QWidget):
+class Task(QWidget):
     Status = Enum('Status', ['Ready', 'Working', 'Finished'])
 
     def __init__(self, name: str, *args, **kwargs):
@@ -62,7 +62,6 @@ class Task(QtWidgets.QWidget):
 
         self._selected = False
         self.setMaximumHeight(60)
-
 
         self._content = QWidget()
         self._task_bar = TaskBar(value=0.0)
@@ -85,14 +84,17 @@ class Task(QtWidgets.QWidget):
         self._content_layout.setContentsMargins(0,0,0,0)
         
         self._info = QScrollArea(minimumHeight=0, maximumHeight=0)
-        self._info.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self._info.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
-        self._info_layout = QGridLayout(self._info)
-        self._info_layout.setContentsMargins(0,0,0,0)
+        self._info_layout = QVBoxLayout(self._info)
+        self._info_layout.setContentsMargins(20,0,20,10)
         
-        for i in range(5):
-            self._info_layout.addWidget(QLabel(f'{i}'), i, 0, 1, 1)
+        self._info_layout.addWidget(QLabel("Total Images: 10"))
+        self._info_layout.addWidget(QLabel("Time remaining: 10h 15m 32s"))
         
+        for i in range(10):
+            self._info_layout.addWidget(QCheckBox(f"Image {i}: Size: 50nm, Offset: (-317.82 , 401.20) nm, Bias: {50*i + 25} V, Setpoint: 120pA", checked=True))
+
         self._layout = QGridLayout(self)
         self._layout.addWidget(self._info, 1, 0)
         self._layout.addWidget(self._content, 0, 0)
@@ -119,17 +121,12 @@ class Task(QtWidgets.QWidget):
         
         collapsed_height = self.sizeHint().height() - self._info.maximumHeight()
         content_height = self._info_layout.sizeHint().height()
-        
-        print(f'collapsed: {collapsed_height}')
-        print(f'content: {content_height}')
-        
+
         anims = [self._info_anim.animationAt(i) for i in range(self._info_anim.animationCount())]
-        
         for anim in anims[:-1]:
-            anim.setDuration(500)
+            anim.setDuration(250)
             anim.setStartValue(collapsed_height)
-            anim.setEndValue(collapsed_height + content_height)
-            
+            anim.setEndValue(collapsed_height + content_height)  
         anims[-1].setStartValue(0)
         anims[-1].setEndValue(content_height)
         
@@ -147,13 +144,20 @@ class Task(QtWidgets.QWidget):
                 self._task_bar_anim.start()
             
         if ev.type() == QtCore.QEvent.MouseButtonPress:
-            if not self._selected:
-                self._selected = True
-                self._info_anim.setDirection(QtCore.QAbstractAnimation.Forward)
-            else:
-                self._selected = False
-                self._info_anim.setDirection(QtCore.QAbstractAnimation.Backward)
-                
-            self._info_anim.start()
+            self._lastpos = ev.pos()
+            
+        if ev.type() == QtCore.QEvent.MouseButtonRelease:
+            widget_on_press = obj.childAt(ev.pos())
+            widget_on_release = obj.childAt(self._lastpos)
+            
+            if widget_on_press == self._task_bar and widget_on_press == widget_on_release:
+                if not self._selected:
+                    self._selected = True
+                    self._info_anim.setDirection(QtCore.QAbstractAnimation.Forward)
+                else:
+                    self._selected = False
+                    self._info_anim.setDirection(QtCore.QAbstractAnimation.Backward)
+                    
+                self._info_anim.start()
 
         return False
