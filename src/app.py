@@ -261,5 +261,5 @@ class Ui_MainWindow(QMainWindow):
         self.add_task_btn.clicked.connect(self.add_task)
 
     def add_task(self):
-        new_task = Task(self.task_name.text())
+        new_task = Task(self.task_name.text(), objectName='task')
         self.task_list.addWidget(new_task)
