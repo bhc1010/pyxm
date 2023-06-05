@@ -9,12 +9,11 @@ QFrame#toolbar {
 
 QFrame#toolbar QPushButton {
     border: 0px;
-    color: white;
-    background: #669df6;
     height: 30px;
 }
 
 QPushButton#play {
+    background: #5B8DDD;
     border-radius: 0px;
     border-top-left-radius: 13px;
     border-bottom-left-radius: 13px;
@@ -22,21 +21,15 @@ QPushButton#play {
     padding-left: 13px;
 }
 
-QPushButton#play:hover {
-    background: #ff6333;
-}
-
 QPushButton#pause {
+    background: #5B8DDD;
     border-radius: 0px;
     padding-left: 5px;
     padding-right: 5px;
 }
 
-QPushButton#pause:hover {
-    background: #ff6333;
-}
-
 QPushButton#stop {
+    background: #5B8DDD;
     border-radius: 0px;
     border-top-right-radius: 13px;
     border-bottom-right-radius: 13px;
@@ -44,13 +37,8 @@ QPushButton#stop {
     padding-right: 13px;
 }
 
-QPushButton#stop:hover {
-    background: #ff6333;
-}
-
-QPushButton#menu, QPushButton#settings {
-    border-radius: 13px;
-    width: 10px;
+QPushButton#menu, QPushButton#settings, QPushButton#menu:hover, QPushButton#settings:hover {
+    background: #669df6;
 }
 
 QLineEdit#task_name {
@@ -66,7 +54,7 @@ QPushButton#add_task_btn {
     font-weight: bold;
 }
 
-QFrame#options_frame, QFrame#task_list_frame {
+QFrame#options_frame, QScrollArea {
     border: 0px;
 }
 
