@@ -20,11 +20,12 @@ from native.scientificspinbox import ScientificSpinBox
 from native.tasklist import TaskList
 from native.task import Task
 from native.togglebutton import ToggleButton
+import qtawesome as fa
 
 from core.exponentialnumber import ExponentialNumber
-from core.bounds import Bounds
-
-import qtawesome as fa
+from core.taskdata import TaskData
+from core.specdata import SpecData
+from datetime import datetime
 
 class Ui_MainWindow(QMainWindow):
 
@@ -248,6 +249,18 @@ class Ui_MainWindow(QMainWindow):
         self.task_name.returnPressed.connect(self.add_task)
 
     def add_task(self):
-        new_task = Task(self.task_name.text())
-        new_task.adjustTextWidth()
-        self.task_list.add_task(new_task)
+        task_data = TaskData(name=self.task_name.text(),
+                             date=datetime.now(),
+                             time_to_finish=0,
+                             lines_per_frame=int(self.lines_per_frame.currentText()),
+                             size=self.scan_size.value.to_float(),
+                             x_offset=self.x_offset.value.to_float(),
+                             y_offset=self.y_offset.value.to_float(),
+                             scan_speed=self.scan_speed.value.to_float(),
+                             line_time=self.line_time.value.to_float(),
+                             start_voltage=self.start_voltage.value.to_float(),
+                             stop_voltage=self.stop_voltage.value.to_float(),
+                             step_voltage=self.step_voltage.value.to_float())
+        task = Task(self.task_name.text(), data=task_data)
+        task.adjustTextWidth()
+        self.task_list.add_task(task)

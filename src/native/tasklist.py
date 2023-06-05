@@ -1,8 +1,6 @@
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import QVBoxLayout, QWidget, QGroupBox, QScrollArea
 
-from native.task import Task
-
 class TaskList(QGroupBox):
     def __init__(self, title, objectName) -> None:
         super().__init__(title, objectName=objectName)
@@ -25,6 +23,6 @@ class TaskList(QGroupBox):
         self.layout().addWidget(self._scrollarea)
         self.layout().setContentsMargins(0,0,0,0)
 
-    def add_task(self, task: Task):
+    def add_task(self, task):
         self.tasks.append(task)
         self._layout.addWidget(task)

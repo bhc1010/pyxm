@@ -1,11 +1,13 @@
+import numpy as np
 from enum import Enum
 
-from PySide6 import QtCore, QtGui, QtWidgets
+from PySide6 import QtCore, QtGui
 from PySide6.QtGui import *
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
-
 import qtawesome as fa
+
+from core.taskdata import TaskData
 
 def clamp10(value):
     return max(min(value, 1.0), 0.0)
@@ -73,7 +75,7 @@ class TaskBar(QWidget):
         painter.fillPath(path, brush)
 
 class TaskInfo(QWidget):
-    def __init__(self):
+    def __init__(self, data: TaskData):
         super().__init__(minimumHeight=0, maximumHeight=0)
         
         self.background = QColor(250, 250, 250)
@@ -84,10 +86,11 @@ class TaskInfo(QWidget):
         self._layout = QVBoxLayout(self._content)
         self._layout.setContentsMargins(20,5,20,10)
     
-        self._layout.addWidget(QLabel("Total Images: 10"))
-        self._layout.addWidget(QLabel("Time remaining: 10h 15m 32s"))    
-        for i in range(10):
-            self._layout.addWidget(QCheckBox(f"Image {i}: Size: 50nm, Offset: (-317.82 , 401.20) nm, Bias: {50*i + 25} V, Setpoint: 120pA", checked=True))
+        bias_range = np.arange(data.start_voltage, data.stop_voltage + data.step_voltage, data.step_voltage)
+        self._layout.addWidget(QLabel(f"Total Images: {len(bias_range)}"))
+        self._layout.addWidget(QLabel("Time remaining: 10h 15m 32s"))
+        for (i, bias) in enumerate(bias_range):
+            self._layout.addWidget(QCheckBox(f"Image {i}: Size: {data.size}, Offset: ({data.x_offset} , {data.y_offset}), Bias: {round(bias, 4)} V", checked=True))
             
         self.setLayout(QGridLayout())
         self.layout().addWidget(self._content)
@@ -139,9 +142,10 @@ class TaskInput(QLineEdit):
 class Task(QWidget):
     Status = Enum('Status', ['Ready', 'Working', 'Finished', 'Error'])
 
-    def __init__(self, name: str):
+    def __init__(self, name: str, data: TaskData):
         super().__init__()
         self.status = Task.Status.Ready
+        self.data = data
         self._selected = False
         self.setMaximumHeight(60)
 
@@ -168,7 +172,7 @@ class Task(QWidget):
         self._content_layout.addItem(QSpacerItem(10, 60), 1, 6)
         self._content_layout.setContentsMargins(0,0,0,0)
         
-        self._info = TaskInfo()
+        self._info = TaskInfo(self.data)
 
         self._layout = QGridLayout(self)
         self._layout.addWidget(self._info, 1, 0)
