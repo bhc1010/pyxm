@@ -21,6 +21,7 @@ qdarktheme.setup_theme(
 )
 
 win = Ui_MainWindow()
+win.setStyleSheet(style)
 
 win.show()
 
