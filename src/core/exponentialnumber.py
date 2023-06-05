@@ -14,7 +14,10 @@ class ExponentialNumber:
         self.exp = exp
 
     def __repr__(self) -> str:
-        return f'{self.sig}e{self.exp}'
+        try:
+            return f'{self.sig} {self.prefix()}'
+        except:
+            return f'{self.sig}e{self.exp}'
 
     def copy(self):
         return ExponentialNumber(self.sig, self.exp)

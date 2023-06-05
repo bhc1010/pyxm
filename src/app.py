@@ -253,14 +253,14 @@ class Ui_MainWindow(QMainWindow):
                              date=datetime.now(),
                              time_to_finish=0,
                              lines_per_frame=int(self.lines_per_frame.currentText()),
-                             size=self.scan_size.value.to_float(),
-                             x_offset=self.x_offset.value.to_float(),
-                             y_offset=self.y_offset.value.to_float(),
-                             scan_speed=self.scan_speed.value.to_float(),
-                             line_time=self.line_time.value.to_float(),
-                             start_voltage=self.start_voltage.value.to_float(),
-                             stop_voltage=self.stop_voltage.value.to_float(),
-                             step_voltage=self.step_voltage.value.to_float())
+                             size=self.scan_size.value,
+                             x_offset=self.x_offset.value,
+                             y_offset=self.y_offset.value,
+                             scan_speed=self.scan_speed.value,
+                             line_time=self.line_time.value,
+                             start_voltage=self.start_voltage.value,
+                             stop_voltage=self.stop_voltage.value,
+                             step_voltage=self.step_voltage.value)
         task = Task(self.task_name.text(), data=task_data)
         task.adjustTextWidth()
         self.task_list.add_task(task)

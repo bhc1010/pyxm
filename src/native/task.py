@@ -86,11 +86,11 @@ class TaskInfo(QWidget):
         self._layout = QVBoxLayout(self._content)
         self._layout.setContentsMargins(20,5,20,10)
     
-        bias_range = np.arange(data.start_voltage, data.stop_voltage + data.step_voltage, data.step_voltage)
+        bias_range = np.arange(data.start_voltage.to_float(), data.stop_voltage.to_float() + data.step_voltage.to_float(), data.step_voltage.to_float())
         self._layout.addWidget(QLabel(f"Total Images: {len(bias_range)}"))
         self._layout.addWidget(QLabel("Time remaining: 10h 15m 32s"))
         for (i, bias) in enumerate(bias_range):
-            self._layout.addWidget(QCheckBox(f"Image {i}: Size: {data.size}, Offset: ({data.x_offset} , {data.y_offset}), Bias: {round(bias, 4)} V", checked=True))
+            self._layout.addWidget(QCheckBox(f"Image {i}: Size: {data.size}m, Offset: ({data.x_offset}m, {data.y_offset}m), Bias: {round(bias, 4)} V", checked=True))
             
         self.setLayout(QGridLayout())
         self.layout().addWidget(self._content)
