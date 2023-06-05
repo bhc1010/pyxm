@@ -17,7 +17,9 @@ from PySide6.QtWidgets import (QComboBox, QFrame, QMainWindow,
 
 from native.scanarea import ScanArea
 from native.scientificspinbox import ScientificSpinBox
+from native.tasklist import TaskList
 from native.task import Task
+from native.togglebutton import ToggleButton
 
 from core.exponentialnumber import ExponentialNumber
 from core.bounds import Bounds
@@ -38,13 +40,16 @@ class Ui_MainWindow(QMainWindow):
         self.toolbar = QFrame(self.centralwidget, objectName='toolbar')
         self.toolbar.setFixedHeight(26)
 
-        self.menu = QPushButton(self.toolbar, objectName='menu')
+        self.menu = ToggleButton(objectName='bars')
         self.left_space = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.play = QPushButton(self.toolbar, objectName='play')
-        self.pause = QPushButton(self.toolbar, objectName='pause')
-        self.stop = QPushButton(self.toolbar)
+        self.play = ToggleButton(objectName='play')
+        self.pause = ToggleButton(objectName='pause')
+        self.stop = ToggleButton(objectName='stop')
         self.right_space = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
-        self.settings = QPushButton(self.toolbar)
+        self.settings = ToggleButton(objectName='cog')
+
+        self.menu.setCheckable(False)
+        self.settings.setCheckable(False)
 
         self.toolbar_layout = QHBoxLayout(self.toolbar)
         self.toolbar_layout.setSpacing(0)
@@ -81,6 +86,7 @@ class Ui_MainWindow(QMainWindow):
         # Scan Options
         self.scan_options = QGroupBox("Image Options")
         self.scan_options.setFlat(True)
+        self.scan_options.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
         self.lines_per_frame_label = QLabel("Lines per frame")
         self.lines_per_frame = QComboBox()
@@ -219,28 +225,28 @@ class Ui_MainWindow(QMainWindow):
         self.options_frame_layout.addWidget(self.add_task_btn)
 
         ## Task List
-        self.task_list_frame = QFrame(self.content, objectName="task_list_frame")
-        self.task_list_frame.setMinimumWidth(300)
-        self.task_list_frame.setMaximumWidth(525)
+        self.task_list = TaskList(title="Task List", objectName='task_list')
+        # self.task_list_frame = QFrame(self.content, objectName="task_list_frame")
+        self.task_list.setMinimumWidth(300)
+        self.task_list.setMaximumWidth(525)
 
-        self.task_list = QVBoxLayout()
-        self.task_list.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self.task_list.setSpacing(0)
+        # self.task_list = QVBoxLayout()
+        # self.task_list.setAlignment(Qt.AlignmentFlag.AlignTop)
+        # self.task_list.setSpacing(0)
         
-        self.task_list_groupbox = QGroupBox("Task List", self.task_list_frame)
-        self.task_list_groupbox.setFlat(True)
-        self.task_list_groupbox.setLayout(self.task_list)
+        # self.task_list_groupbox = QGroupBox("Task List", self.task_list_frame)
+        # self.task_list_groupbox.setFlat(True)
+        # self.task_list_groupbox.setLayout(self.task_list)
 
-        self.task_list_frame_layout = QVBoxLayout(self.task_list_frame)
-        self.task_list_frame_layout.setContentsMargins(0, 0, 0, 0)
-        self.task_list_frame_layout.addWidget(self.task_list_groupbox)
+        # self.task_list_frame_layout = QVBoxLayout(self.task_list_frame)
+        # self.task_list_frame_layout.setContentsMargins(0, 0, 0, 0)
+        # self.task_list_frame_layout.addWidget(self.task_list_groupbox)
         
-
         self.content_layout = QHBoxLayout(self.content)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.addWidget(self.scan_area_frame)
         self.content_layout.addWidget(self.options_frame)
-        self.content_layout.addWidget(self.task_list_frame)
+        self.content_layout.addWidget(self.task_list)
         self.content_layout.setSpacing(10)
 
         self.window_layout = QVBoxLayout(self.centralwidget)
@@ -248,18 +254,13 @@ class Ui_MainWindow(QMainWindow):
         self.window_layout.addWidget(self.content)
 
         self.setCentralWidget(self.centralwidget)
-
-        self.menu.setIcon(fa.icon('fa5s.bars', color="white"))
-        self.play.setIcon(fa.icon('fa5s.play', color="white"))
-        self.pause.setIcon(fa.icon('fa5s.pause', color="white"))
-        self.stop.setIcon(fa.icon('fa5s.stop', color="white"))
-        self.settings.setIcon(fa.icon('fa5s.cog', color="white"))
-
         self.setup_connections()
 
     def setup_connections(self):
         self.add_task_btn.clicked.connect(self.add_task)
+        self.task_name.returnPressed.connect(self.add_task)
 
     def add_task(self):
         new_task = Task(self.task_name.text(), objectName='task')
-        self.task_list.addWidget(new_task)
+        new_task.adjustTextWidth()
+        self.task_list.add_task(new_task)

@@ -47,7 +47,6 @@ class ScanArea(QGraphicsView):
         else:
             factor = 0.9 
             self._zoom -= 1
-        print(self._zoom)
         if self._zoom > 0:
             self.scale(factor, factor)
         else:
