@@ -12,11 +12,12 @@ class TaskList(QGroupBox):
         self._scrollarea = QScrollArea()
         self._scrollarea.setWidget(self._contents)
         self._scrollarea.setWidgetResizable(True)
+        self._scrollarea.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOn)
 
         self._layout = QVBoxLayout(self)
         self._layout.setAlignment(Qt.AlignmentFlag.AlignTop)
-        self._layout.setSpacing(0)
-        self._layout.setContentsMargins(0,0,0,0)
+        self._layout.setSpacing(3)
+        self._layout.setContentsMargins(0,0,5,0)
         self._contents.setLayout(self._layout)
 
         self.setFlat(True)

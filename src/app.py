@@ -226,21 +226,8 @@ class Ui_MainWindow(QMainWindow):
 
         ## Task List
         self.task_list = TaskList(title="Task List", objectName='task_list')
-        # self.task_list_frame = QFrame(self.content, objectName="task_list_frame")
         self.task_list.setMinimumWidth(300)
         self.task_list.setMaximumWidth(525)
-
-        # self.task_list = QVBoxLayout()
-        # self.task_list.setAlignment(Qt.AlignmentFlag.AlignTop)
-        # self.task_list.setSpacing(0)
-        
-        # self.task_list_groupbox = QGroupBox("Task List", self.task_list_frame)
-        # self.task_list_groupbox.setFlat(True)
-        # self.task_list_groupbox.setLayout(self.task_list)
-
-        # self.task_list_frame_layout = QVBoxLayout(self.task_list_frame)
-        # self.task_list_frame_layout.setContentsMargins(0, 0, 0, 0)
-        # self.task_list_frame_layout.addWidget(self.task_list_groupbox)
         
         self.content_layout = QHBoxLayout(self.content)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
@@ -261,6 +248,6 @@ class Ui_MainWindow(QMainWindow):
         self.task_name.returnPressed.connect(self.add_task)
 
     def add_task(self):
-        new_task = Task(self.task_name.text(), objectName='task')
+        new_task = Task(self.task_name.text())
         new_task.adjustTextWidth()
         self.task_list.add_task(new_task)

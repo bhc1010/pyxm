@@ -113,6 +113,7 @@ class TaskInput(QLineEdit):
         self._text = text
 
         self.textChanged.connect(self.updateText)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
 
     def updateText(self, text):
         self._text = text
@@ -135,7 +136,7 @@ class TaskInput(QLineEdit):
 
         return super().focusOutEvent(event)
 
-class Task(QtWidgets.QWidget):
+class Task(QWidget):
     Status = Enum('Status', ['Ready', 'Working', 'Finished', 'Error'])
 
     def __init__(self, name: str):
@@ -148,21 +149,23 @@ class Task(QtWidgets.QWidget):
         self._task_bar = TaskBar(value=0.0)
         self._task_bar.updateColor(self.status)
         self._icon = QLabel(pixmap=fa.icon('fa5.circle', color='black').pixmap(24, 24))
+        self._icon.setFixedWidth(24)
         self._name = TaskInput(name)
         self._name.textChanged.connect(self.adjustTextWidth)
-        self._name.setStyleSheet('QLineEdit { background: transparent; color: black; border: 0px; }')
-        self._options_btn = QPushButton(icon=fa.icon('fa5s.ellipsis-v', color='black', scale_factor=1.0))
-        self._options_btn.setFlat(True)        
+        self._name.setStyleSheet('QLineEdit { background: transparent; color: black; border: 0px;}')
+        self._drag = QLabel(pixmap=fa.icon('fa5s.ellipsis-v', color='black').pixmap(24,24))
+        self._drag.setFixedWidth(20)
         self._content.setFixedHeight(self._task_bar.rect().height())
 
         self._content_layout = QGridLayout(self._content)
-        self._content_layout.addWidget(self._task_bar, 0, 0, 3, 5)
-        self._content_layout.addWidget(QLabel(''), 1, 0, 1, 1)
-        self._content_layout.addWidget(self._icon, 1, 1, 1, 1)
-        self._content_layout.addWidget(self._name, 1, 2, 1, 1)
-        self._content_layout.addWidget(self._options_btn, 1, 3, 1, 1)
-        self._content_layout.addWidget(QLabel(''), 1, 4, 1, 1)
-        self._content_layout.setColumnStretch(2, 1)
+        self._content_layout.addWidget(self._task_bar, 0, 0, 3, 7)
+        self._content_layout.addItem(QSpacerItem(10, 60), 1, 0)
+        self._content_layout.addWidget(self._icon, 1, 1)
+        self._content_layout.addItem(QSpacerItem(10, 60, QSizePolicy.Expanding, QSizePolicy.Expanding), 1, 2)
+        self._content_layout.addWidget(self._name, 1, 3)
+        self._content_layout.addItem(QSpacerItem(10, 60, QSizePolicy.Expanding, QSizePolicy.Expanding), 1, 4)
+        self._content_layout.addWidget(self._drag, 1, 5)
+        self._content_layout.addItem(QSpacerItem(10, 60), 1, 6)
         self._content_layout.setContentsMargins(0,0,0,0)
         
         self._info = TaskInfo()
@@ -171,12 +174,7 @@ class Task(QtWidgets.QWidget):
         self._layout.addWidget(self._info, 1, 0)
         self._layout.addWidget(self._content, 0, 0)
         self._layout.setSpacing(0)
-
         self._layout.setContentsMargins(0,0,0,0)
-        self.setStyleSheet('border: 0px')
-        
-        self._name.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        self._options_btn.setMaximumWidth(30)
 
         self.installEventFilter(self)
 
