@@ -1,5 +1,7 @@
 from PySide6.QtGui import Qt
-from PySide6.QtWidgets import QVBoxLayout, QWidget, QGroupBox, QScrollArea
+from PySide6.QtWidgets import *
+
+from native.task import Task
 
 class TaskList(QGroupBox):
     def __init__(self, title, objectName) -> None:
@@ -23,6 +25,23 @@ class TaskList(QGroupBox):
         self.layout().addWidget(self._scrollarea)
         self.layout().setContentsMargins(0,0,0,0)
 
-    def add_task(self, task):
+    def add_task(self, task_name, task_data):
+        task = Task(name=task_name, data=task_data, idx=len(self.tasks), dropFunc=self.drop_task)
+        task.adjustTextWidth()
+
         self.tasks.append(task)
         self._layout.addWidget(task)
+
+    def drop_task(self, idx):
+        dlg = QMessageBox(self)
+        dlg.setWindowTitle("Remove Task")
+        dlg.setText("Are you sure you want to remove this task?")
+        dlg.setStandardButtons(QMessageBox.Yes | QMessageBox.No)
+        dlg.setIcon(QMessageBox.Question)
+
+        if dlg.exec_() == QMessageBox.Yes:
+            self.tasks.pop(idx)
+            for (i, task) in enumerate(self.tasks):
+                task.setIndex(i)
+            self._layout.takeAt(idx).widget().deleteLater()
+

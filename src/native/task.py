@@ -1,5 +1,6 @@
 import numpy as np
 from enum import Enum
+from typing import Callable
 
 from PySide6 import QtCore, QtGui
 from PySide6.QtGui import *
@@ -27,7 +28,7 @@ class TaskBar(QWidget):
     def updateColor(self, status):
         match(status):
             case Task.Status.Ready:
-                self._background_color = QColor(245, 245, 245)
+                self._background_color = QColor(235, 235, 235)
                 self._bar_color = QColor(200, 200, 200)
             case Task.Status.Working:
                 self._background_color = QColor(102, 157, 246)
@@ -75,10 +76,10 @@ class TaskBar(QWidget):
         painter.fillPath(path, brush)
 
 class TaskInfo(QWidget):
-    def __init__(self, data: TaskData):
+    def __init__(self, data: TaskData, remove_task_btn: QPushButton):
         super().__init__(minimumHeight=0, maximumHeight=0)
         
-        self.background = QColor(250, 250, 250)
+        self.background = QColor(245, 245, 245)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
         self._content = QScrollArea()
@@ -91,7 +92,8 @@ class TaskInfo(QWidget):
         self._layout.addWidget(QLabel("Time remaining: 10h 15m 32s"))
         for (i, bias) in enumerate(bias_range):
             self._layout.addWidget(QCheckBox(f"Image {i}: Size: {data.size}m, Offset: ({data.x_offset}m, {data.y_offset}m), Bias: {round(bias, 4)} V", checked=True))
-            
+        self._layout.addWidget(remove_task_btn)
+
         self.setLayout(QGridLayout())
         self.layout().addWidget(self._content)
         self.layout().setContentsMargins(0,0,0,0)
@@ -142,13 +144,15 @@ class TaskInput(QLineEdit):
 class Task(QWidget):
     Status = Enum('Status', ['Ready', 'Working', 'Finished', 'Error'])
 
-    def __init__(self, name: str, data: TaskData):
+    def __init__(self, name: str, data: TaskData, idx: int, dropFunc: Callable):
         super().__init__()
         self.status = Task.Status.Ready
+        self.index = idx
         self.data = data
+        self.dropFunc = dropFunc
         self._selected = False
-        self.setMaximumHeight(60)
 
+        self.setMaximumHeight(60)
         self._content = QWidget()
         self._task_bar = TaskBar(value=0.0)
         self._task_bar.updateColor(self.status)
@@ -172,7 +176,9 @@ class Task(QWidget):
         self._content_layout.addItem(QSpacerItem(10, 60), 1, 6)
         self._content_layout.setContentsMargins(0,0,0,0)
         
-        self._info = TaskInfo(self.data)
+        self._remove_task_btn = QPushButton("Remove Task")
+        self._remove_task_btn.clicked.connect(self.dropSelf)
+        self._info = TaskInfo(self.data, self._remove_task_btn)
 
         self._layout = QGridLayout(self)
         self._layout.addWidget(self._info, 1, 0)
@@ -250,6 +256,12 @@ class Task(QWidget):
         padding = 25
         fixedWidth = min(width + padding, 0.6 * self.rect().width())
         self._name.setFixedWidth(fixedWidth)
+
+    def setIndex(self, i):
+        self.index = i
+
+    def dropSelf(self):
+        self.dropFunc(self.index)
 
     def resizeEvent(self, event) -> None:
         self.adjustTextWidth()

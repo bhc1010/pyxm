@@ -75,9 +75,11 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy.setHeightForWidth(True)
         self.scan_area.setSizePolicy(sizePolicy)
 
-        self.scan_area_layout = QGridLayout(self.scan_area_frame)
+        self.scan_area_layout = QVBoxLayout(self.scan_area_frame)
         self.scan_area_layout.setContentsMargins(0, 7, 0, 0)
-        self.scan_area_layout.addWidget(self.scan_area, 0, 0, 1, 1)
+        # self.scan_area_layout.addStretch()
+        self.scan_area_layout.addWidget(self.scan_area)
+        # self.scan_area_layout.addStretch()
 
         ## Options
         self.options_frame = QFrame(self.content, objectName="options_frame")
@@ -261,6 +263,5 @@ class Ui_MainWindow(QMainWindow):
                              start_voltage=self.start_voltage.value,
                              stop_voltage=self.stop_voltage.value,
                              step_voltage=self.step_voltage.value)
-        task = Task(self.task_name.text(), data=task_data)
-        task.adjustTextWidth()
-        self.task_list.add_task(task)
+
+        self.task_list.add_task(task_name=self.task_name.text(), task_data=task_data)

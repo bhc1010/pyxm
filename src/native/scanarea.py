@@ -1,8 +1,10 @@
-from PySide6.QtCore import QRect
-from PySide6.QtGui import QColor
+from PySide6.QtCore import *
+from PySide6.QtGui import *
 from PySide6.QtWidgets import QGraphicsView, QGraphicsScene
 
 from PySide6 import QtWidgets, QtCore
+
+from native.scanrect import ScanRectItem
 
 class ScanArea(QGraphicsView):
     def __init__(self, *args, **kwargs):
@@ -23,17 +25,25 @@ class ScanArea(QGraphicsView):
         self.setDragMode(QGraphicsView.ScrollHandDrag)
 
         self.draw_grid()
+        
+        self.scan_rect = ScanRectItem(scene_limits = 1000, init_rect = QRectF(450, 450, 100, 100))
+        self.scene().addItem(self.scan_rect)
+
         self.fitInView(self._scene.sceneRect(), QtCore.Qt.KeepAspectRatio)
         self._current_view = self._scene.sceneRect()
 
     def draw_grid(self):
+        pen = QPen(QColor(218, 220, 224))
+        pen.setCosmetic(True)
+        blkPen = QPen(QColor(50,50,50))
+        blkPen.setCosmetic(True)
         for tick in range(self._grid_size + 1):
             if tick == 0 or tick == round(self._grid_size / 2) or tick == self._grid_size:
-                self._scene.addLine(tick*100, 0., tick*100, 1000., QColor(50, 50, 50))
-                self._scene.addLine(0., tick*100, 1000., tick*100, QColor(50, 50, 50))
+                self._scene.addLine(tick*100, 0., tick*100, 1000., blkPen)
+                self._scene.addLine(0., tick*100, 1000., tick*100, blkPen)
                 continue
-            self._scene.addLine(tick*100, 1., tick*100, 1000., QColor(218, 220, 224))
-            self._scene.addLine(1., tick*100, 1000., tick*100, QColor(218, 220, 224))
+            self._scene.addLine(tick*100, 1., tick*100, 1000., pen)
+            self._scene.addLine(1., tick*100, 1000., tick*100, pen)
 
     def resizeEvent(self, event):
         min_size = min(self.rect().width(), self.rect().height())
