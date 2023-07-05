@@ -8,7 +8,7 @@ from core.exponentialnumber import ExponentialNumber
 class TaskData:
     name: str
     date: datetime
-    time_to_finish: float
+    time_to_finish: str
     lines_per_frame: int
     size: ExponentialNumber
     x_offset: ExponentialNumber

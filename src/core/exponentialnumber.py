@@ -15,7 +15,7 @@ class ExponentialNumber:
 
     def __repr__(self) -> str:
         try:
-            return f'{self.sig} {self.prefix()}'
+            return f'{round(self.sig, 3)} {self.prefix()}'
         except:
             return f'{self.sig}e{self.exp}'
 

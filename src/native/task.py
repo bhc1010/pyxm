@@ -86,12 +86,18 @@ class TaskInfo(QWidget):
         self._content.setStyleSheet('background: transparent')
         self._layout = QVBoxLayout(self._content)
         self._layout.setContentsMargins(20,5,20,10)
-    
         bias_range = np.arange(data.start_voltage.to_float(), data.stop_voltage.to_float() + data.step_voltage.to_float(), data.step_voltage.to_float())
+    
+        sublayout = QGridLayout()
+        sublayout.addWidget(QLabel(f"Size: {data.size}m"), 0, 0)
+        sublayout.addWidget(QLabel(f"Offset: ({data.x_offset}m, {data.y_offset}m)"), 1, 0)
+        sublayout.addWidget(QLabel(f"Lines per frame: {data.lines_per_frame}"), 0, 1)
+        sublayout.addWidget(QLabel(f"Line time: {data.line_time.to_float()}s"), 1, 1)
+        self._layout.addLayout(sublayout)
         self._layout.addWidget(QLabel(f"Total Images: {len(bias_range)}"))
-        self._layout.addWidget(QLabel("Time remaining: 10h 15m 32s"))
-        for (i, bias) in enumerate(bias_range):
-            self._layout.addWidget(QCheckBox(f"Image {i}: Size: {data.size}m, Offset: ({data.x_offset}m, {data.y_offset}m), Bias: {round(bias, 4)} V", checked=True))
+        self._layout.addWidget(QLabel(f"Time remaining: {data.time_to_finish}"))
+        for bias in bias_range:
+            self._layout.addWidget(QCheckBox(f"Bias: {round(bias, 4)} V", checked=True))
         self._layout.addWidget(remove_task_btn)
 
         self.setLayout(QGridLayout())

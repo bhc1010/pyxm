@@ -14,9 +14,6 @@ class ScanRectItem(QGraphicsRectItem):
     handleBottomMiddle = 7
     handleBottomRight = 8
 
-    handleSize = +8.0
-    handleSpace = -4.0
-
     handleCursors = {
         handleTopLeft: Qt.SizeFDiagCursor,
         handleTopMiddle: Qt.SizeVerCursor,
@@ -28,16 +25,20 @@ class ScanRectItem(QGraphicsRectItem):
         handleBottomRight: Qt.SizeFDiagCursor,
     }
 
-    def __init__(self, scene_limits: float, init_rect: QRectF):
+    def __init__(self,  init_rect: QRectF, scene_limits: float, min_size: float):
         """
         Initialize the shape.
         """
         super().__init__(init_rect)
-        self.scene_limits = scene_limits
+        self.scene_limits = scene_limits  
+        self.min_size = min_size  
         self.handles = {}
+        self.handleSize = +18
+        self.handleSpace = -9
         self.handleSelected = None
         self.mousePressPos = None
         self.mousePressRect = None
+        self.handle_color = QColor(0,0,0)
         self.setAcceptHoverEvents(True)
         self.setFlag(QGraphicsItem.ItemIsMovable, True)
         self.setFlag(QGraphicsItem.ItemIsSelectable, True)
@@ -58,6 +59,7 @@ class ScanRectItem(QGraphicsRectItem):
         """
         Executed when the mouse moves over the shape (NOT PRESSED).
         """
+        self.handle_color = QColor(255, 0, 0)
         if self.isSelected():
             handle = self.handleAt(moveEvent.pos())
             cursor = Qt.ArrowCursor if handle is None else self.handleCursors[handle]
@@ -68,6 +70,7 @@ class ScanRectItem(QGraphicsRectItem):
         """
         Executed when the mouse leaves the shape (NOT PRESSED).
         """
+        self.handle_color = QColor(0, 0, 0)
         self.setCursor(Qt.ArrowCursor)
         super().hoverLeaveEvent(moveEvent)
 
@@ -89,21 +92,25 @@ class ScanRectItem(QGraphicsRectItem):
             self.interactiveResize(mouseEvent.pos())
         else:
             super().mouseMoveEvent(mouseEvent)
-            bbox = self.sceneBoundingRect()
+            
+            o = self.handleSize + self.handleSpace
+            bbox = self.scene_inner_rect()
             offset = 0.5*bbox.width()
             pos = bbox.center()
             x, y = pos.x(), pos.y()
-            limit = self.scene_limits - offset
-            scene_limit = 0.5*self.scene_limits - offset
-            if x < offset:
-                self.setX(-scene_limit)
-            elif x > limit:
-                self.setX(scene_limit)
+            limit_lower = self.scene_limits[0] + offset
+            limit_upper = self.scene_limits[1] - offset
+            scene_limit_lower = self.scene_limits[0] + offset
+            scene_limit_upper = self.scene_limits[1] - offset
+            if x < limit_lower:
+                self.setX(scene_limit_lower)
+            elif x > limit_upper:
+                self.setX(scene_limit_upper)
 
-            if y < offset:
-                self.setY(-scene_limit)
-            elif y > limit:
-                self.setY(scene_limit)
+            if y < limit_lower:
+                self.setY(scene_limit_lower)
+            elif y > limit_upper:
+                self.setY(scene_limit_upper)
 
     def mouseReleaseEvent(self, mouseEvent):
         """
@@ -121,6 +128,24 @@ class ScanRectItem(QGraphicsRectItem):
         """
         o = self.handleSize + self.handleSpace
         return self.rect().adjusted(-o, -o, o, o)
+    
+    def scene_inner_rect(self):
+        """
+        Returns the scene space bounding rect of the shape (excluding the resize handles).
+        """
+        o = self.handleSize + self.handleSpace
+        return self.sceneBoundingRect().adjusted(o, o, -o, -o)
+        
+
+    def in_bounds(self, bbox) -> bool:
+        limit_lower = self.scene_limits[0]
+        limit_upper = self.scene_limits[1]
+        if bbox.left() < limit_lower or bbox.right() > limit_upper:
+            return False
+        elif bbox.top() < limit_lower or bbox.bottom() > limit_upper:
+            return False
+        else:
+            return True
 
     def updateHandlesPos(self):
         """
@@ -129,24 +154,19 @@ class ScanRectItem(QGraphicsRectItem):
         s = self.handleSize
         b = self.boundingRect()
         self.handles[self.handleTopLeft] = QRectF(b.left(), b.top(), s, s)
-        self.handles[self.handleTopMiddle] = QRectF(b.center().x() - s / 2, b.top(), s, s)
         self.handles[self.handleTopRight] = QRectF(b.right() - s, b.top(), s, s)
-        self.handles[self.handleMiddleLeft] = QRectF(b.left(), b.center().y() - s / 2, s, s)
-        self.handles[self.handleMiddleRight] = QRectF(b.right() - s, b.center().y() - s / 2, s, s)
         self.handles[self.handleBottomLeft] = QRectF(b.left(), b.bottom() - s, s, s)
-        self.handles[self.handleBottomMiddle] = QRectF(b.center().x() - s / 2, b.bottom() - s, s, s)
         self.handles[self.handleBottomRight] = QRectF(b.right() - s, b.bottom() - s, s, s)
 
     def interactiveResize(self, mousePos):
         """
         Perform shape interactive resize.
         """
-        offset = self.handleSize + self.handleSpace
         rect = self.rect()
         dx = mousePos.x() - self.mousePressPos.x()
         dy = mousePos.y() - self.mousePressPos.y()
         diff = QPointF(dx, dy)
-
+        
         self.prepareGeometryChange()
 
         if self.handleSelected == self.handleTopLeft:
@@ -209,9 +229,13 @@ class ScanRectItem(QGraphicsRectItem):
         new_center = rect.center()
         rect.translate(center - new_center)
 
-        self.setRect(rect)
-        # self.setPos(new_center.toSceneCoordinates())
-        self.updateHandlesPos()
+        if rect.width() > self.min_size:
+            old_rect = self.rect()
+            self.setRect(rect)
+            if not self.in_bounds(self.scene_inner_rect()):
+                self.setRect(old_rect)
+            # self.setPos(new_center.toSceneCoordinates())
+            self.updateHandlesPos()
 
     def shape(self):
         """
@@ -235,10 +259,9 @@ class ScanRectItem(QGraphicsRectItem):
         painter.setPen(pen)
         painter.drawRect(self.rect())
 
-        pen.setColor('red')
+        pen.setColor(QColor(0,0,0,0))
         painter.setRenderHint(QPainter.Antialiasing)
-        painter.setBrush(QBrush(QColor(255, 0, 0, 255)))
+        painter.setBrush(QBrush(self.handle_color))
         painter.setPen(pen)
-        for handle, rect in self.handles.items():
-            if self.handleSelected is None or handle == self.handleSelected:
-                painter.drawRect(rect)
+        for _, rect in self.handles.items():
+            painter.drawRect(rect)

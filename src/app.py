@@ -8,12 +8,8 @@
 ## WARNING! All changes made in this file will be lost when recompiling UI file!
 ################################################################################
 
-from PySide6.QtCore import QSize, Qt
-from PySide6.QtWidgets import (QComboBox, QFrame, QMainWindow,
-    QGraphicsView, QGridLayout, QGroupBox, QHBoxLayout,
-    QLabel, QLayout, QLineEdit,
-    QPushButton, QSizePolicy, QSpacerItem, QVBoxLayout,
-    QWidget)
+from PySide6.QtCore import *
+from PySide6.QtWidgets import *
 
 from native.scanarea import ScanArea
 from native.scientificspinbox import ScientificSpinBox
@@ -87,7 +83,7 @@ class Ui_MainWindow(QMainWindow):
         self.options_frame.setMaximumWidth(375)
 
         # Scan Options
-        self.scan_options = QGroupBox("Image Options")
+        self.scan_options = QGroupBox("Image Parameters")
         self.scan_options.setFlat(True)
         self.scan_options.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
@@ -120,6 +116,7 @@ class Ui_MainWindow(QMainWindow):
         self.scan_speed.setBounds(lower=ExponentialNumber(2.5, -12), upper=ExponentialNumber(1, -6))
         self.scan_speed.setValue(ExponentialNumber(100, -9))
         self.scan_speed.setUnits('m/s')
+        self.scan_speed.setEnabled(False)
 
         self.line_time_label = QLabel("Line time")
         self.line_time = ScientificSpinBox()
@@ -145,7 +142,7 @@ class Ui_MainWindow(QMainWindow):
         self.scan_options.setLayout(self.scan_options_layout)
 
         # Voltage Options
-        self.voltage_options = QGroupBox("Voltage Options", self.options_frame)
+        self.voltage_options = QGroupBox("Voltage Parameters", self.options_frame)
         self.voltage_options.setFlat(True)
 
         self.start_voltage_label = QLabel("Start voltage", self.voltage_options)
@@ -165,6 +162,17 @@ class Ui_MainWindow(QMainWindow):
         self.step_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
         self.step_voltage.setValue(ExponentialNumber(100, -3))
         self.step_voltage.setUnits('V')
+        
+        self.set_point_label = QLabel("Set Point", self.voltage_options)
+        self.set_point = ScientificSpinBox()
+        self.set_point.setBounds(lower=ExponentialNumber(-5, -9), upper=ExponentialNumber(5, -9))
+        self.set_point.setValue(ExponentialNumber(120, -12))
+        self.set_point.setUnits('A')
+        
+        self.repetitions_label = QLabel("Repetitions", self.voltage_options)
+        self.repetitions = QSpinBox()
+        self.repetitions.setValue(1)
+        self.repetitions.setMinimum(1)
 
         self.voltage_options_layout = QGridLayout()
         self.voltage_options_layout.addWidget(self.start_voltage_label, 0, 0, 1, 1)
@@ -173,14 +181,19 @@ class Ui_MainWindow(QMainWindow):
         self.voltage_options_layout.addWidget(self.stop_voltage, 1, 1, 1, 1)
         self.voltage_options_layout.addWidget(self.step_voltage_label, 2, 0, 1, 1)
         self.voltage_options_layout.addWidget(self.step_voltage, 2, 1, 1, 1)
+        self.voltage_options_layout.addWidget(self.set_point_label, 3, 0, 1, 1)
+        self.voltage_options_layout.addWidget(self.set_point, 3, 1, 1, 1)
+        self.voltage_options_layout.addWidget(self.repetitions_label, 4, 0, 1, 1)
+        self.voltage_options_layout.addWidget(self.repetitions, 4, 1, 1, 1)
         self.voltage_options.setLayout(self.voltage_options_layout)
 
-        self.sts_options = QGroupBox("Spectroscopy Options", self.options_frame)
+        self.sts_options = QGroupBox("Spectroscopy Parameters", self.options_frame)
         self.sts_options.setFlat(True)
+        self.sts_options.setEnabled(False)
 
         self.sts_mode_label = QLabel("Spectroscopy mode", self.sts_options)
         self.sts_mode = QComboBox(self.sts_options)
-        self.sts_mode.addItems(["Point Spectroscopy", "Spec on a Line", "All"])
+        self.sts_mode.addItems(["None", "Point", "Line", "Region", "All"])
 
         self.sts_start_voltage_label = QLabel("Start voltage", self.sts_options)
         self.sts_start_voltage = ScientificSpinBox()
@@ -211,8 +224,14 @@ class Ui_MainWindow(QMainWindow):
         self.sts_options_layout.addWidget(self.sts_step_voltage, 3, 1, 1, 1)
         self.sts_options.setLayout(self.sts_options_layout)
 
-        # Add task
+        # Spacing
         self.options_spacing = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+
+        # Task Info
+        self.total_images = QLabel("Total images:", self.options_frame)
+        self.time_to_finish = QLabel("Time to finish:", self.options_frame)
+
+        # Add task
         self.task_name = QLineEdit(self.options_frame, objectName="task_name")
         self.add_task_btn = QPushButton("Add Task", self.options_frame, objectName="add_task_btn")
 
@@ -224,6 +243,8 @@ class Ui_MainWindow(QMainWindow):
         self.options_frame_layout.addWidget(self.voltage_options)
         self.options_frame_layout.addWidget(self.sts_options)
         self.options_frame_layout.addItem(self.options_spacing)
+        self.options_frame_layout.addWidget(self.total_images)
+        self.options_frame_layout.addWidget(self.time_to_finish)
         self.options_frame_layout.addWidget(self.task_name)
         self.options_frame_layout.addWidget(self.add_task_btn)
 
@@ -243,17 +264,33 @@ class Ui_MainWindow(QMainWindow):
         self.window_layout.addWidget(self.toolbar)
         self.window_layout.addWidget(self.content)
 
+        self.update_total_images()
+        self.update_time_to_finish()
+
         self.setCentralWidget(self.centralwidget)
         self.setup_connections()
 
     def setup_connections(self):
         self.add_task_btn.clicked.connect(self.add_task)
         self.task_name.returnPressed.connect(self.add_task)
+        self.scan_area.scan_rect_moved.connect(self.scan_rect_moved)
+        self.scan_size.textChanged.connect(self.update_scan_size)
+        self.scan_size.textChanged.connect(self.update_time_to_finish)
+        self.x_offset.textChanged.connect(self.update_scan_position)
+        self.y_offset.textChanged.connect(self.update_scan_position)
+        self.lines_per_frame.currentIndexChanged.connect(self.update_time_to_finish)
+        self.line_time.textChanged.connect(self.update_time_to_finish)
+        self.start_voltage.textChanged.connect(self.update_time_to_finish)
+        self.stop_voltage.textChanged.connect(self.update_time_to_finish)
+        self.step_voltage.textChanged.connect(self.update_time_to_finish)
+        self.start_voltage.textChanged.connect(self.update_total_images)
+        self.stop_voltage.textChanged.connect(self.update_total_images)
+        self.step_voltage.textChanged.connect(self.update_total_images)
 
     def add_task(self):
         task_data = TaskData(name=self.task_name.text(),
                              date=datetime.now(),
-                             time_to_finish=0,
+                             time_to_finish=self.time_to_finish.text().split(": ")[1],
                              lines_per_frame=int(self.lines_per_frame.currentText()),
                              size=self.scan_size.value,
                              x_offset=self.x_offset.value,
@@ -265,3 +302,44 @@ class Ui_MainWindow(QMainWindow):
                              step_voltage=self.step_voltage.value)
 
         self.task_list.add_task(task_name=self.task_name.text(), task_data=task_data)
+
+    def update_scan_size(self):
+        print("setting new scan rect")
+        newRect = self.scan_area.scan_rect.sceneBoundingRect()
+        dx = self.scan_area.scan_rect.rect().center().x() - newRect.center().x()
+        dy = self.scan_area.scan_rect.rect().center().y() - newRect.center().y()
+        newRect.translate(dx, dy)
+        self.scan_area.scan_rect.setRect(newRect)
+        self.scan_area.scan_rect.updateHandlesPos()
+        
+    def update_scan_position(self):
+        self.scan_area.scan_rect.setPos(self.x_offset.value.sig, self.y_offset.value.sig)
+
+    def scan_rect_moved(self):
+        scan_rect = self.scan_area.scan_rect.scene_inner_rect()
+        pos = scan_rect.center()
+        x = pos.x()
+        y = pos.y()
+        self.x_offset.setValue(ExponentialNumber(x, -9))
+        self.y_offset.setValue(ExponentialNumber(y, -9))
+        print("updating scansize")
+        self.scan_size.setValue(ExponentialNumber(scan_rect.width(), -9))
+        
+    def update_time_to_finish(self):
+        N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
+        total_time = 2 * self.line_time.value.to_float() * float(self.lines_per_frame.currentText()) * N
+        
+        days = int(total_time // (24*3600))
+        hours = int(total_time // (60*60)) - 24*days
+        mins = int(total_time // 60) - 60*24*days - 60*hours
+        secs = int(total_time) - 60*60*24*days - 60*60*hours - 60*mins
+        if days > 0:
+            time_to_finish = f'{days}d {hours}h {mins}m {secs}s'
+        else:
+            time_to_finish = f'{hours}h {mins}m {secs}s'
+            
+        self.time_to_finish.setText(f'Time to finish: {time_to_finish}')
+        
+    def update_total_images(self):
+        N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
+        self.total_images.setText(f"Total images: {int(N)}")
