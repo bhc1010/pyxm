@@ -1,3 +1,5 @@
+import PySide6.QtCore
+import PySide6.QtGui
 import numpy as np
 
 from PySide6.QtCore import *
@@ -6,6 +8,7 @@ from PySide6.QtWidgets import *
 
 from native.scanrect import ScanRectItem
 from native.scantoolbar import ScanAreaToolBar
+from native.togglebutton import ToggleButton
 
 class ScanArea(QGraphicsView):
     scan_rect_moved = Signal()
@@ -20,9 +23,30 @@ class ScanArea(QGraphicsView):
         self._scene.setSceneRect(QRect(-500., -500., 1000., 1000.))
         self.setScene(self._scene)
         
-        self.toolbar = ScanAreaToolBar(self)
-        self._scene.addItem(self.toolbar)
+        move = ToggleButton(objectName='arrows-alt', unchecked="#000", checked="#ff964f")
+        move.setStyleSheet('QPushButton {background: transparent; border: 0px}')
+        moveP = QGraphicsProxyWidget()
+        moveP.setWidget(move)
+        
+        edit = ToggleButton(objectName='vector-square', unchecked="#000", checked="#ff964f")
+        edit.setStyleSheet('QPushButton {background: transparent; border: 0px}')
+        editP = QGraphicsProxyWidget()
+        editP.setWidget(edit)
+        
+        toolbar_layout = QGraphicsLinearLayout(Qt.Orientation.Vertical)
+        toolbar_layout.addItem(moveP)
+        toolbar_layout.addItem(editP)
+        
+        self.button = QGraphicsWidget()
+        self.button.setLayout(toolbar_layout)
+        self.button.setFlag(QGraphicsItem.ItemIgnoresTransformations)
+        self.button.setZValue(1)
+        # self.button.hide()
+        self.button.setPos(-490, -490)
+        
+        self._scene.addItem(self.button)
 
+        self.setMouseTracking(True)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
         self.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
@@ -57,15 +81,15 @@ class ScanArea(QGraphicsView):
 
     def wheelEvent(self, event):
         if event.angleDelta().y() > 0:
-            factor = 1.1
+            self.zoom_factor = 1.1
             self._zoom += 1
         else:
-            factor = 0.9 
+            self.zoom_factor = 0.9 
             self._zoom -= 1
         if self._zoom > 0:
-            self.scale(factor, factor)
-            self.scan_rect.handleSize /= factor
-            self.scan_rect.handleSpace /= factor
+            self.scale(self.zoom_factor, self.zoom_factor)
+            self.scan_rect.handleSize /= self.zoom_factor
+            self.scan_rect.handleSpace /= self.zoom_factor
             self.scan_rect.updateHandlesPos()
         else:
             self._zoom = 0
@@ -74,19 +98,30 @@ class ScanArea(QGraphicsView):
             self.scan_rect.handleSpace = -int(0.5*ScanRectItem._handleSize)
 
         self.updateCurrentView()
+        self.update_tool_bar()
 
     def showEvent(self, event):
         self.updateCurrentView()
         
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        super().mouseMoveEvent(event)
         if Qt.MouseButton.LeftButton in event.buttons():
             if self.itemAt(event.pos()) == self.scan_rect:
                 self.scan_rect_moved.emit()
-        return super().mouseMoveEvent(event)
+            else:
+                self.update_tool_bar()
         
     def mouseReleaseEvent(self, event) -> None:
         self.updateCurrentView()
         return super().mouseReleaseEvent(event)
+
+    # def enterEvent(self, event: QEnterEvent) -> None:
+    #     self.button.setVisible(True)
+    #     return super().enterEvent(event)
+    
+    # def leaveEvent(self, event: QEvent) -> None:
+    #     self.button.setVisible(False)
+    #     return super().leaveEvent(event)
 
     def toggleDragMode(self):
         if self.dragMode() == QGraphicsView.ScrollHandDrag:
@@ -96,3 +131,9 @@ class ScanArea(QGraphicsView):
     
     def updateCurrentView(self):
         self._current_view = self.mapToScene(self.viewport().rect()).boundingRect()
+        
+    def update_tool_bar(self):
+        padding = self.mapToScene(QPoint(10, 10))
+        top_left = self.mapToScene(self.viewport().rect()).boundingRect().topLeft()
+        self.button.setPos((top_left + padding)/2)
+        

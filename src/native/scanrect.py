@@ -61,7 +61,7 @@ class ScanRectItem(QGraphicsRectItem):
         """
         Executed when the mouse moves over the shape (NOT PRESSED).
         """
-        self.handle_color = QColor(255, 0, 0)
+        self.handle_color = QColor(255, 20, 10)
         if self.isSelected():
             handle = self.handleAt(moveEvent.pos())
             cursor = Qt.ArrowCursor if handle is None else self.handleCursors[handle]

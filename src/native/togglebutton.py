@@ -3,13 +3,14 @@ from PySide6.QtWidgets import QPushButton
 import qtawesome as fa
 
 class ToggleButton(QPushButton):
-    _unchecked = '#fff'
-    _checked = '#9badca'
 
-    def __init__(self, objectName):
+    def __init__(self, objectName, unchecked='#fff', checked="#9badca"):
         super().__init__(objectName=objectName)
+        
+        self._unchecked = unchecked
+        self._checked = checked
 
-        self._icon = fa.icon(f'fa5s.{self.objectName()}', color=ToggleButton._unchecked)
+        self._icon = fa.icon(f'fa5s.{self.objectName()}', color=self._unchecked)
         self.setIcon(self._icon)
         self.setCheckable(True)
 
@@ -21,18 +22,18 @@ class ToggleButton(QPushButton):
 
     def toggle(self):
         if self.isChecked():
-            self.setColor(ToggleButton._checked)
+            self.setColor(self._checked)
         else:
-            self.setColor(ToggleButton._unchecked)
+            self.setColor(self._unchecked)
 
     def enterEvent(self, event) -> None:
         if not self.isChecked():
-            self.setColor(ToggleButton._checked)
+            self.setColor(self._checked)
 
         return super().enterEvent(event)
     
     def leaveEvent(self, event) -> None:
         if not self.isChecked():
-            self.setColor(ToggleButton._unchecked)
+            self.setColor(self._unchecked)
 
         return super().leaveEvent(event)
