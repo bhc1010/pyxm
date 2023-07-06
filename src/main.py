@@ -5,7 +5,7 @@ from pathlib import Path
 from PySide6 import QtCore
 from PySide6.QtWidgets import QApplication
 
-from app import Ui_MainWindow
+from ui.app import Ui_MainWindow
 
 QApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
