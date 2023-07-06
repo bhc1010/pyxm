@@ -8,11 +8,14 @@ from core.exponentialnumber import ExponentialNumber
 class TaskData:
     name: str
     date: datetime
-    time_to_finish: str
+    repetitions: int
+    total_images: int
     lines_per_frame: int
+    time_to_finish: str
     size: ExponentialNumber
     x_offset: ExponentialNumber
     y_offset: ExponentialNumber
+    set_point: ExponentialNumber
     scan_speed: ExponentialNumber
     line_time: ExponentialNumber
     start_voltage: ExponentialNumber

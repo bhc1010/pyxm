@@ -1,6 +1,6 @@
-from PySide6.QtCore import Qt, QRectF, QPointF
-from PySide6.QtGui import QBrush, QPainterPath, QPainter, QColor, QPen
-from PySide6.QtWidgets import QGraphicsRectItem, QGraphicsItem
+from PySide6.QtCore import *
+from PySide6.QtGui import *
+from PySide6.QtWidgets import *
 
 
 class ScanRectItem(QGraphicsRectItem):
@@ -13,6 +13,8 @@ class ScanRectItem(QGraphicsRectItem):
     handleBottomLeft = 6
     handleBottomMiddle = 7
     handleBottomRight = 8
+    
+    _handleSize = 14
 
     handleCursors = {
         handleTopLeft: Qt.SizeFDiagCursor,
@@ -33,8 +35,8 @@ class ScanRectItem(QGraphicsRectItem):
         self.scene_limits = scene_limits  
         self.min_size = min_size  
         self.handles = {}
-        self.handleSize = +18
-        self.handleSpace = -9
+        self.handleSize = ScanRectItem._handleSize
+        self.handleSpace = -int(0.5*ScanRectItem._handleSize)
         self.handleSelected = None
         self.mousePressPos = None
         self.mousePressRect = None
@@ -89,7 +91,7 @@ class ScanRectItem(QGraphicsRectItem):
         Executed when the mouse is being moved over the item while being pressed.
         """
         if self.handleSelected is not None:
-            self.interactiveResize(mouseEvent.pos())
+            self.interactiveResize(mouseEvent)
         else:
             super().mouseMoveEvent(mouseEvent)
             
@@ -158,11 +160,12 @@ class ScanRectItem(QGraphicsRectItem):
         self.handles[self.handleBottomLeft] = QRectF(b.left(), b.bottom() - s, s, s)
         self.handles[self.handleBottomRight] = QRectF(b.right() - s, b.bottom() - s, s, s)
 
-    def interactiveResize(self, mousePos):
+    def interactiveResize(self, mouseEvent: QMouseEvent):
         """
         Perform shape interactive resize.
         """
         rect = self.rect()
+        mousePos = mouseEvent.pos()
         dx = mousePos.x() - self.mousePressPos.x()
         dy = mousePos.y() - self.mousePressPos.y()
         diff = QPointF(dx, dy)
@@ -231,10 +234,13 @@ class ScanRectItem(QGraphicsRectItem):
 
         if rect.width() > self.min_size:
             old_rect = self.rect()
+            old_pos = self.pos()
             self.setRect(rect)
+            if Qt.KeyboardModifier.ShiftModifier not in mouseEvent.modifiers():
+                self.setPos(self.mapToScene(new_center))
             if not self.in_bounds(self.scene_inner_rect()):
                 self.setRect(old_rect)
-            # self.setPos(new_center.toSceneCoordinates())
+                self.setPos(old_pos)
             self.updateHandlesPos()
 
     def shape(self):

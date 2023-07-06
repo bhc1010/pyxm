@@ -5,6 +5,7 @@ from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
 from native.scanrect import ScanRectItem
+from native.scantoolbar import ScanAreaToolBar
 
 class ScanArea(QGraphicsView):
     scan_rect_moved = Signal()
@@ -18,6 +19,9 @@ class ScanArea(QGraphicsView):
         self._scene = QGraphicsScene()
         self._scene.setSceneRect(QRect(-500., -500., 1000., 1000.))
         self.setScene(self._scene)
+        
+        self.toolbar = ScanAreaToolBar(self)
+        self._scene.addItem(self.toolbar)
 
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
         self.setResizeAnchor(QGraphicsView.AnchorUnderMouse)
@@ -66,8 +70,8 @@ class ScanArea(QGraphicsView):
         else:
             self._zoom = 0
             self.fitInView(self._scene.sceneRect(), Qt.KeepAspectRatio)
-            self.scan_rect.handleSize = 18
-            self.scan_rect.handleSpace = -9
+            self.scan_rect.handleSize = ScanRectItem._handleSize
+            self.scan_rect.handleSpace = -int(0.5*ScanRectItem._handleSize)
 
         self.updateCurrentView()
 

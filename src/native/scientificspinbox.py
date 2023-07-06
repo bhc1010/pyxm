@@ -2,12 +2,13 @@ from core.bounds import Bounds
 from core.exponentialnumber import ExponentialNumber
 from core.selection import Selection
 
-from PySide6.QtWidgets import QLineEdit
-from PySide6.QtGui import QRegularExpressionValidator
-from PySide6.QtCore import Qt
+from PySide6.QtWidgets import *
+from PySide6.QtGui import *
+from PySide6.QtCore import *
 
 class ScientificSpinBox(QLineEdit):
     _DECIMAL_POS = 5
+    value_changed = Signal()
 
     def __init__(self, value: ExponentialNumber = ExponentialNumber.default(), bounds: Bounds = Bounds.default(), units: str = '[[unit]]', *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -25,19 +26,19 @@ class ScientificSpinBox(QLineEdit):
 
     def setValue(self, value: ExponentialNumber) -> None:
         self.value = value
-        self.update_text()
+        self.update_text(emit=False)
 
     def setBounds(self, bounds: Bounds) -> None:
         self.bounds = bounds
-        self.update_text()
+        self.update_text(emit=False)
 
     def setBounds(self, lower: ExponentialNumber, upper: ExponentialNumber) -> None:
         self.bounds = Bounds(lower, upper)
-        self.update_text()
+        self.update_text(emit=False)
 
     def setUnits(self, units: str) -> None:
         self.units = units
-        self.update_text()
+        self.update_text(emit=False)
 
     def keyPressEvent(self, event) -> None:
         ##-------- Left Arrow ------------##
@@ -138,7 +139,7 @@ class ScientificSpinBox(QLineEdit):
                     self.update_text()
                     self.setSelection(self.selection.start, 1)
 
-    def update_text(self):
+    def update_text(self, emit=True):
         self.value = self.bounds.clamp(self.value)
         self._text = f'{abs(self.value.sig):07.3f} {self.value.prefix()}{self.units}'
         if self.value.sig >= 0:
@@ -146,3 +147,5 @@ class ScientificSpinBox(QLineEdit):
         else:
             self._text = f'-{self._text}'
         self.setText(self._text)
+        if emit:
+            self.value_changed.emit()

@@ -91,10 +91,12 @@ class TaskInfo(QWidget):
         sublayout = QGridLayout()
         sublayout.addWidget(QLabel(f"Size: {data.size}m"), 0, 0)
         sublayout.addWidget(QLabel(f"Offset: ({data.x_offset}m, {data.y_offset}m)"), 1, 0)
+        sublayout.addWidget(QLabel(f"Set point: {data.set_point}A"), 2, 0)
         sublayout.addWidget(QLabel(f"Lines per frame: {data.lines_per_frame}"), 0, 1)
         sublayout.addWidget(QLabel(f"Line time: {data.line_time.to_float()}s"), 1, 1)
+        sublayout.addWidget(QLabel(f"Repetitions: {data.repetitions}"), 2, 1)
         self._layout.addLayout(sublayout)
-        self._layout.addWidget(QLabel(f"Total Images: {len(bias_range)}"))
+        self._layout.addWidget(QLabel(f"Total Images: {data.total_images}"))
         self._layout.addWidget(QLabel(f"Time remaining: {data.time_to_finish}"))
         for bias in bias_range:
             self._layout.addWidget(QCheckBox(f"Bias: {round(bias, 4)} V", checked=True))

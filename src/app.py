@@ -212,7 +212,13 @@ class Ui_MainWindow(QMainWindow):
         self.sts_step_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
         self.sts_step_voltage.setValue(ExponentialNumber(25, -3))
         self.sts_step_voltage.setUnits('V')
-
+        
+        self.sts_delay_time_label = QLabel("Delay Time", self.sts_options)
+        self.sts_delay_time = ScientificSpinBox()
+        self.sts_delay_time.setBounds(lower=ExponentialNumber(5, -3), upper=ExponentialNumber(1, 0))
+        self.sts_delay_time.setValue(ExponentialNumber(10, -3))
+        self.sts_delay_time.setUnits('s')
+        
         self.sts_options_layout = QGridLayout()
         self.sts_options_layout.addWidget(self.sts_mode_label, 0, 0, 1, 1)
         self.sts_options_layout.addWidget(self.sts_mode, 0, 1, 1, 1)
@@ -222,6 +228,8 @@ class Ui_MainWindow(QMainWindow):
         self.sts_options_layout.addWidget(self.sts_stop_voltage, 2, 1, 1, 1)
         self.sts_options_layout.addWidget(self.sts_step_voltage_label, 3, 0, 1, 1)
         self.sts_options_layout.addWidget(self.sts_step_voltage, 3, 1, 1, 1)
+        self.sts_options_layout.addWidget(self.sts_delay_time_label, 4, 0, 1, 1)
+        self.sts_options_layout.addWidget(self.sts_delay_time, 4, 1, 1, 1)
         self.sts_options.setLayout(self.sts_options_layout)
 
         # Spacing
@@ -274,25 +282,29 @@ class Ui_MainWindow(QMainWindow):
         self.add_task_btn.clicked.connect(self.add_task)
         self.task_name.returnPressed.connect(self.add_task)
         self.scan_area.scan_rect_moved.connect(self.scan_rect_moved)
-        self.scan_size.textChanged.connect(self.update_scan_size)
-        self.scan_size.textChanged.connect(self.update_time_to_finish)
-        self.x_offset.textChanged.connect(self.update_scan_position)
-        self.y_offset.textChanged.connect(self.update_scan_position)
+        self.scan_size.value_changed.connect(self.update_scan_size)
+        self.x_offset.value_changed.connect(self.update_scan_position)
+        self.y_offset.value_changed.connect(self.update_scan_position)
         self.lines_per_frame.currentIndexChanged.connect(self.update_time_to_finish)
-        self.line_time.textChanged.connect(self.update_time_to_finish)
-        self.start_voltage.textChanged.connect(self.update_time_to_finish)
-        self.stop_voltage.textChanged.connect(self.update_time_to_finish)
-        self.step_voltage.textChanged.connect(self.update_time_to_finish)
-        self.start_voltage.textChanged.connect(self.update_total_images)
-        self.stop_voltage.textChanged.connect(self.update_total_images)
-        self.step_voltage.textChanged.connect(self.update_total_images)
+        self.line_time.value_changed.connect(self.update_time_to_finish)
+        self.start_voltage.value_changed.connect(self.update_time_to_finish)
+        self.stop_voltage.value_changed.connect(self.update_time_to_finish)
+        self.step_voltage.value_changed.connect(self.update_time_to_finish)
+        self.repetitions.valueChanged.connect(self.update_time_to_finish)
+        self.start_voltage.value_changed.connect(self.update_total_images)
+        self.stop_voltage.value_changed.connect(self.update_total_images)
+        self.step_voltage.value_changed.connect(self.update_total_images)
+        self.repetitions.valueChanged.connect(self.update_total_images)
 
     def add_task(self):
         task_data = TaskData(name=self.task_name.text(),
                              date=datetime.now(),
+                             repetitions=self.repetitions.value(),
+                             total_images=int(self.total_images.text().split(": ")[1]),
                              time_to_finish=self.time_to_finish.text().split(": ")[1],
                              lines_per_frame=int(self.lines_per_frame.currentText()),
                              size=self.scan_size.value,
+                             set_point=self.set_point.value,
                              x_offset=self.x_offset.value,
                              y_offset=self.y_offset.value,
                              scan_speed=self.scan_speed.value,
@@ -304,16 +316,20 @@ class Ui_MainWindow(QMainWindow):
         self.task_list.add_task(task_name=self.task_name.text(), task_data=task_data)
 
     def update_scan_size(self):
-        print("setting new scan rect")
-        newRect = self.scan_area.scan_rect.sceneBoundingRect()
+        newRect = self.scan_area.scan_rect.scene_inner_rect()
+        print(newRect)
+        newRect.setWidth(self.scan_size.value.to_float()*1e9)
+        newRect.setHeight(self.scan_size.value.to_float()*1e9)
         dx = self.scan_area.scan_rect.rect().center().x() - newRect.center().x()
         dy = self.scan_area.scan_rect.rect().center().y() - newRect.center().y()
+        print(dx, dy)
         newRect.translate(dx, dy)
         self.scan_area.scan_rect.setRect(newRect)
         self.scan_area.scan_rect.updateHandlesPos()
+        self.update_time_to_finish()
         
     def update_scan_position(self):
-        self.scan_area.scan_rect.setPos(self.x_offset.value.sig, self.y_offset.value.sig)
+        self.scan_area.scan_rect.setPos(self.x_offset.value.to_float()*1e9, self.y_offset.value.to_float()*1e9)
 
     def scan_rect_moved(self):
         scan_rect = self.scan_area.scan_rect.scene_inner_rect()
@@ -322,11 +338,11 @@ class Ui_MainWindow(QMainWindow):
         y = pos.y()
         self.x_offset.setValue(ExponentialNumber(x, -9))
         self.y_offset.setValue(ExponentialNumber(y, -9))
-        print("updating scansize")
         self.scan_size.setValue(ExponentialNumber(scan_rect.width(), -9))
         
     def update_time_to_finish(self):
         N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
+        N *= self.repetitions.value()
         total_time = 2 * self.line_time.value.to_float() * float(self.lines_per_frame.currentText()) * N
         
         days = int(total_time // (24*3600))
@@ -342,4 +358,5 @@ class Ui_MainWindow(QMainWindow):
         
     def update_total_images(self):
         N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
+        N *= self.repetitions.value()
         self.total_images.setText(f"Total images: {int(N)}")
