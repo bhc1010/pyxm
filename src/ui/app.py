@@ -11,11 +11,11 @@
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 
-from native.scanarea import ScanArea
-from native.scientificspinbox import ScientificSpinBox
-from native.tasklist import TaskList
-from native.task import Task
-from native.togglebutton import ToggleButton
+from ui.native.scanarea import ScanArea
+from ui.native.scientificspinbox import ScientificSpinBox
+from ui.native.tasklist import TaskList
+from ui.native.task import Task
+from ui.native.togglebutton import ToggleButton
 import qtawesome as fa
 
 from core.exponentialnumber import ExponentialNumber

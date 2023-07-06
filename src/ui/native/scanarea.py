@@ -6,9 +6,9 @@ from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
-from native.scanrect import ScanRectItem
-from native.scantoolbar import ScanAreaToolBar
-from native.togglebutton import ToggleButton
+from ui.native.scanrect import ScanRectItem
+from ui.native.scantoolbar import ScanAreaToolBar
+from ui.native.togglebutton import ToggleButton
 
 class ScanArea(QGraphicsView):
     scan_rect_moved = Signal()

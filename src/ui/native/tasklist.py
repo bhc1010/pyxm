@@ -1,7 +1,7 @@
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import *
 
-from native.task import Task
+from ui.native.task import Task
 
 class TaskList(QGroupBox):
     def __init__(self, title, objectName) -> None:

@@ -10,7 +10,7 @@ from ui.app import Ui_MainWindow
 QApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 
 app = QApplication(sys.argv)
-style = Path('src/style/style.css').read_text()
+style = Path('src/ui/style/style.css').read_text()
 
 qdarktheme.setup_theme(
     theme="light",
