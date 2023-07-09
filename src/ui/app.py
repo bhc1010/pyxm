@@ -1,27 +1,18 @@
-# -*- coding: utf-8 -*-
-
-################################################################################
-## Form generated from reading UI file 'main.ui'
-##
-## Created by: Qt User Interface Compiler version 6.5.0
-##
-## WARNING! All changes made in this file will be lost when recompiling UI file!
-################################################################################
-
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
-
-from ui.native.scanarea import ScanArea
-from ui.native.scientificspinbox import ScientificSpinBox
-from ui.native.tasklist import TaskList
-from ui.native.task import Task
-from ui.native.togglebutton import ToggleButton
-import qtawesome as fa
+from datetime import datetime
 
 from core.exponentialnumber import ExponentialNumber
 from core.taskdata import TaskData
 from core.specdata import SpecData
-from datetime import datetime
+
+from lib.native.taskworker import TaskWorker
+
+from ui.native.scanarea import ScanArea
+from ui.native.scientificspinbox import ScientificSpinBox
+from ui.native.tasklist import TaskList
+from ui.native.togglebutton import ToggleButton
+
 
 class Ui_MainWindow(QMainWindow):
 
@@ -32,6 +23,12 @@ class Ui_MainWindow(QMainWindow):
         self.setWindowTitle("STM Automator")
         self.resize(1400, 800)
         self.centralwidget = QWidget(self)
+
+        ## ------- Task threadpool ----- ##
+        self.threadpool1 = QThreadPool()
+        self.threadpool1.setMaxThreadCount(1)
+        print("Multithreading with maximum %d threads" % self.threadpool1.maxThreadCount())
+        self.threadpool2 = QThreadPool()
 
         ## ------ Toolbar ------ ##
         self.toolbar = QFrame(self.centralwidget, objectName='toolbar')
@@ -296,6 +293,17 @@ class Ui_MainWindow(QMainWindow):
         self.step_voltage.value_changed.connect(self.update_total_images)
         self.repetitions.valueChanged.connect(self.update_total_images)
 
+        self.play.clicked.connect(self.test_play)
+
+    def test_play(self):
+        if len(self.task_list.tasks) > 0:
+            for task in self.task_list.tasks:
+                worker = TaskWorker()
+                self.threadpool1.start(worker)
+                worker2 = TaskWorker()
+                self.threadpool2.start(worker2)
+                
+
     def add_task(self):
         task_data = TaskData(name=self.task_name.text(),
                              date=datetime.now(),
@@ -317,12 +325,10 @@ class Ui_MainWindow(QMainWindow):
 
     def update_scan_size(self):
         newRect = self.scan_area.scan_rect.scene_inner_rect()
-        print(newRect)
         newRect.setWidth(self.scan_size.value.to_float()*1e9)
         newRect.setHeight(self.scan_size.value.to_float()*1e9)
         dx = self.scan_area.scan_rect.rect().center().x() - newRect.center().x()
         dy = self.scan_area.scan_rect.rect().center().y() - newRect.center().y()
-        print(dx, dy)
         newRect.translate(dx, dy)
         self.scan_area.scan_rect.setRect(newRect)
         self.scan_area.scan_rect.updateHandlesPos()
