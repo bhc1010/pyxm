@@ -60,22 +60,6 @@ class STM():
         cmd = f'SetSWSubItemParameter, Scan Area Window, Scan Settings, Scan Count, {scan_count}\n'
         return self.send(cmd)
     
-    def get_time_remaining(self):
-        now = time.time()
-
-        cmd = "GetSWSubItemParameter, Scan Area Window, Scan Settings, Lines Per Frame\n"
-        Lines = self.send(cmd, float)
-
-        cmd = "GetSWParameter, Scan Area Window, Line Time\n"
-        LineTime = self.send(cmd, float)
-
-        cmd = "GetSWSubItemParameter, Scan Area Window, Scan Settings, Over Scan Count\n"
-        OverScanCount = self.send(cmd, float)
-
-        ScanTime = 2*(Lines+OverScanCount)*LineTime
-
-        return now + ScanTime
-
     def get_save_path(self):
         cmd = "GetSWSubItemParameter, Scan Area Window, MeasureSave, Save Path\n"
         return os.path.normpath(self.send(cmd, str))

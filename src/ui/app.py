@@ -25,10 +25,9 @@ class Ui_MainWindow(QMainWindow):
         self.centralwidget = QWidget(self)
 
         ## ------- Task threadpool ----- ##
-        self.threadpool1 = QThreadPool()
-        self.threadpool1.setMaxThreadCount(1)
-        print("Multithreading with maximum %d threads" % self.threadpool1.maxThreadCount())
-        self.threadpool2 = QThreadPool()
+        self.threadpool = QThreadPool()
+        self.threadpool.setMaxThreadCount(1)
+        print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         ## ------ Toolbar ------ ##
         self.toolbar = QFrame(self.centralwidget, objectName='toolbar')
@@ -293,17 +292,22 @@ class Ui_MainWindow(QMainWindow):
         self.step_voltage.value_changed.connect(self.update_total_images)
         self.repetitions.valueChanged.connect(self.update_total_images)
 
-        self.play.clicked.connect(self.test_play)
+        self.play.clicked.connect(self.start_task)
 
-    def test_play(self):
+    def start_task(self):
         if len(self.task_list.tasks) > 0:
-            for task in self.task_list.tasks:
-                worker = TaskWorker()
-                self.threadpool1.start(worker)
-                worker2 = TaskWorker()
-                self.threadpool2.start(worker2)
+            currentTask = self.task_list.tasks[0].data
+            worker = TaskWorker(currentTask)
+            worker.signals.finished.connect(self.restart_task_worker)
+            self.threadpool.start(worker)
+            
+    def restart_task_worker(self):
+        '''
+            Update taskbar value.
+            Remove task from list
+        '''
+        print("finished!")
                 
-
     def add_task(self):
         task_data = TaskData(name=self.task_name.text(),
                              date=datetime.now(),
