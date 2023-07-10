@@ -41,7 +41,7 @@ QPushButton#menu, QPushButton#settings, QPushButton#menu:hover, QPushButton#sett
     background: #669df6;
 }
 
-QLineEdit#task_name {
+QLineEdit#task_set_name {
     background: white;
     border-radius: 0px;
 }

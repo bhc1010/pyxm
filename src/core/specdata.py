@@ -1,13 +1,12 @@
 from dataclasses import dataclass
-from typing import List
 from enum import Enum
 
-SpecMode = Enum('SpecMode', ['Point', 'Line'])
+SpecMode = Enum('SpecMode', ['Point', 'Line', 'Region'])
 
 @dataclass
 class SpecData:
     mode: SpecMode
-    start_voltage: float
-    stop_voltage: float
-    step_voltage: float
-    values: List[List[float]]
+    start: float
+    stop: float
+    step: float
+    delay_time: float

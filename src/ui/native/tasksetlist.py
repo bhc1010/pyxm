@@ -1,12 +1,14 @@
 from PySide6.QtGui import Qt
 from PySide6.QtWidgets import *
 
-from ui.native.task import Task
+from core.tasksetdata import TaskSetData
+from ui.native.taskset import TaskSet
 
-class TaskList(QGroupBox):
+class TaskSetList(QGroupBox):
     def __init__(self, title, objectName) -> None:
         super().__init__(title, objectName=objectName)
-        self.tasks = list()
+        self.task_sets = list()
+        self.all_tasks = list()
 
         self._contents = QWidget(self)
         self._scrollarea = QScrollArea()
@@ -25,12 +27,13 @@ class TaskList(QGroupBox):
         self.layout().addWidget(self._scrollarea)
         self.layout().setContentsMargins(0,0,0,0)
 
-    def add_task(self, task_name, task_data):
-        task = Task(name=task_name, data=task_data, idx=len(self.tasks), dropFunc=self.drop_task)
-        task.adjustTextWidth()
+    def add_task_set(self, task_set_name, task_set_data: TaskSetData):
+        task_set = TaskSet(name=task_set_name, data=task_set_data, idx=len(self.task_sets), dropFunc=self.drop_task)
+        task_set.adjustTextWidth()
 
-        self.tasks.append(task)
-        self._layout.addWidget(task)
+        self.task_sets.append(task_set)
+        self.all_tasks.append(task_set.data.tasks)
+        self._layout.addWidget(task_set)
 
     def drop_task(self, idx):
         dlg = QMessageBox(self)

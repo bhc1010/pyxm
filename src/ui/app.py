@@ -3,14 +3,13 @@ from PySide6.QtWidgets import *
 from datetime import datetime
 
 from core.exponentialnumber import ExponentialNumber
-from core.taskdata import TaskData
-from core.specdata import SpecData
+from core.tasksetdata import TaskSetData
 
 from lib.native.taskworker import TaskWorker
 
 from ui.native.scanarea import ScanArea
 from ui.native.scientificspinbox import ScientificSpinBox
-from ui.native.tasklist import TaskList
+from ui.native.tasksetlist import TaskSetList
 from ui.native.togglebutton import ToggleButton
 
 
@@ -26,7 +25,6 @@ class Ui_MainWindow(QMainWindow):
 
         ## ------- Task threadpool ----- ##
         self.threadpool = QThreadPool()
-        self.threadpool.setMaxThreadCount(1)
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         ## ------ Toolbar ------ ##
@@ -236,7 +234,7 @@ class Ui_MainWindow(QMainWindow):
         self.time_to_finish = QLabel("Time to finish:", self.options_frame)
 
         # Add task
-        self.task_name = QLineEdit(self.options_frame, objectName="task_name")
+        self.task_set_name = QLineEdit(self.options_frame, objectName="task_set_name")
         self.add_task_btn = QPushButton("Add Task", self.options_frame, objectName="add_task_btn")
 
         # Options layout
@@ -249,19 +247,19 @@ class Ui_MainWindow(QMainWindow):
         self.options_frame_layout.addItem(self.options_spacing)
         self.options_frame_layout.addWidget(self.total_images)
         self.options_frame_layout.addWidget(self.time_to_finish)
-        self.options_frame_layout.addWidget(self.task_name)
+        self.options_frame_layout.addWidget(self.task_set_name)
         self.options_frame_layout.addWidget(self.add_task_btn)
 
         ## Task List
-        self.task_list = TaskList(title="Task List", objectName='task_list')
-        self.task_list.setMinimumWidth(300)
-        self.task_list.setMaximumWidth(525)
+        self.task_set_list = TaskSetList(title="Task List", objectName='task_list')
+        self.task_set_list.setMinimumWidth(300)
+        self.task_set_list.setMaximumWidth(525)
         
         self.content_layout = QHBoxLayout(self.content)
         self.content_layout.setContentsMargins(0, 0, 0, 0)
         self.content_layout.addWidget(self.scan_area_frame)
         self.content_layout.addWidget(self.options_frame)
-        self.content_layout.addWidget(self.task_list)
+        self.content_layout.addWidget(self.task_set_list)
         self.content_layout.setSpacing(10)
 
         self.window_layout = QVBoxLayout(self.centralwidget)
@@ -272,11 +270,11 @@ class Ui_MainWindow(QMainWindow):
         self.update_time_to_finish()
 
         self.setCentralWidget(self.centralwidget)
-        self.setup_connections()
+        self.setup_events()
 
-    def setup_connections(self):
-        self.add_task_btn.clicked.connect(self.add_task)
-        self.task_name.returnPressed.connect(self.add_task)
+    def setup_events(self):
+        self.add_task_btn.clicked.connect(self.add_task_set)
+        self.task_set_name.returnPressed.connect(self.add_task_set)
         self.scan_area.scan_rect_moved.connect(self.scan_rect_moved)
         self.scan_size.value_changed.connect(self.update_scan_size)
         self.x_offset.value_changed.connect(self.update_scan_position)
@@ -295,8 +293,8 @@ class Ui_MainWindow(QMainWindow):
         self.play.clicked.connect(self.start_task)
 
     def start_task(self):
-        if len(self.task_list.tasks) > 0:
-            currentTask = self.task_list.tasks[0].data
+        if len(self.task_set_list.tasks) > 0:
+            currentTask = self.task_set_list.tasks[0].data
             worker = TaskWorker(currentTask)
             worker.signals.finished.connect(self.restart_task_worker)
             self.threadpool.start(worker)
@@ -308,11 +306,11 @@ class Ui_MainWindow(QMainWindow):
         '''
         print("finished!")
                 
-    def add_task(self):
-        task_data = TaskData(name=self.task_name.text(),
+    def add_task_set(self):
+        task_set_data = TaskSetData(name=self.task_set_name.text(),
                              date=datetime.now(),
                              repetitions=self.repetitions.value(),
-                             total_images=int(self.total_images.text().split(": ")[1]),
+                             total_tasks=int(self.total_images.text().split(": ")[1]),
                              time_to_finish=self.time_to_finish.text().split(": ")[1],
                              lines_per_frame=int(self.lines_per_frame.currentText()),
                              size=self.scan_size.value,
@@ -321,11 +319,9 @@ class Ui_MainWindow(QMainWindow):
                              y_offset=self.y_offset.value,
                              scan_speed=self.scan_speed.value,
                              line_time=self.line_time.value,
-                             start_voltage=self.start_voltage.value,
-                             stop_voltage=self.stop_voltage.value,
-                             step_voltage=self.step_voltage.value)
+                             tasks=[])
 
-        self.task_list.add_task(task_name=self.task_name.text(), task_data=task_data)
+        self.task_set_list.add_task_set(task_set_name=self.task_set_name.text(), task_set_data=task_set_data)
 
     def update_scan_size(self):
         newRect = self.scan_area.scan_rect.scene_inner_rect()

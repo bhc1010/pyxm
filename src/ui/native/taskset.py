@@ -8,12 +8,12 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 import qtawesome as fa
 
-from core.taskdata import TaskData
+from core.tasksetdata import TaskSetData
 
 def clamp10(value):
     return max(min(value, 1.0), 0.0)
 
-class TaskBar(QWidget):
+class TaskSetBar(QWidget):
     def __init__(self, value = 0.5, padding = 5, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
@@ -27,16 +27,16 @@ class TaskBar(QWidget):
 
     def updateColor(self, status):
         match(status):
-            case Task.Status.Ready:
+            case TaskSet.Status.Ready:
                 self._background_color = QColor(235, 235, 235)
                 self._bar_color = QColor(200, 200, 200)
-            case Task.Status.Working:
+            case TaskSet.Status.Working:
                 self._background_color = QColor(102, 157, 246)
                 self._bar_color = QColor(21, 101, 192)
-            case Task.Status.Finished:
+            case TaskSet.Status.Finished:
                 self._background_color = QColor(66, 219, 99)
                 self._bar_color = self._background_color
-            case Task.Status.Error:
+            case TaskSet.Status.Error:
                 self._background_color = QColor(255, 78, 78)
                 self._bar_color = QColor(255, 41, 41)
 
@@ -75,8 +75,37 @@ class TaskBar(QWidget):
         path.addRoundedRect(_progress_rect, 15, 15)
         painter.fillPath(path, brush)
 
-class TaskInfo(QWidget):
-    def __init__(self, data: TaskData, remove_task_btn: QPushButton):
+class TaskSetInput(QLineEdit):
+    def __init__(self, text: str):
+        super().__init__(text)
+        self._text = text
+
+        self.textChanged.connect(self.updateText)
+        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+    def updateText(self, text):
+        self._text = text
+    
+    def elideText(self):
+        padding = 8
+        elidedText = self.fontMetrics().elidedText(self._text, Qt.TextElideMode.ElideRight, self.width() - padding)
+        _text = self._text
+        self.setText(elidedText)
+        self.updateText(_text)
+        self.setCursorPosition(0)
+
+    def focusInEvent(self, event) -> None:
+        self.setText(self._text)
+
+        return super().focusInEvent(event)
+
+    def focusOutEvent(self, event) -> None:
+        self.elideText()
+
+        return super().focusOutEvent(event)
+
+class TaskSetInfo(QWidget):
+    def __init__(self, data: TaskSetData, remove_task_btn: QPushButton):
         super().__init__(minimumHeight=0, maximumHeight=0)
         
         self.background = QColor(245, 245, 245)
@@ -86,6 +115,8 @@ class TaskInfo(QWidget):
         self._content.setStyleSheet('background: transparent')
         self._layout = QVBoxLayout(self._content)
         self._layout.setContentsMargins(20,5,20,10)
+        ## TODO: TastSetData needs to be given a list of tasks before this step. then we decide based on the datatype what to display.
+        ## TODO: Custom TaskItem widget that subclasses QCheckBox and contains an index that matches its place in the taskset
         bias_range = np.arange(data.start_voltage.to_float(), data.stop_voltage.to_float() + data.step_voltage.to_float(), data.step_voltage.to_float())
     
         sublayout = QGridLayout()
@@ -120,41 +151,12 @@ class TaskInfo(QWidget):
         path.addRoundedRect(background_rect, 15, 15)
         painter.fillPath(path, brush)
 
-class TaskInput(QLineEdit):
-    def __init__(self, text: str):
-        super().__init__(text)
-        self._text = text
-
-        self.textChanged.connect(self.updateText)
-        self.setAlignment(Qt.AlignmentFlag.AlignCenter)
-
-    def updateText(self, text):
-        self._text = text
-    
-    def elideText(self):
-        padding = 8
-        elidedText = self.fontMetrics().elidedText(self._text, Qt.TextElideMode.ElideRight, self.width() - padding)
-        _text = self._text
-        self.setText(elidedText)
-        self.updateText(_text)
-        self.setCursorPosition(0)
-
-    def focusInEvent(self, event) -> None:
-        self.setText(self._text)
-
-        return super().focusInEvent(event)
-
-    def focusOutEvent(self, event) -> None:
-        self.elideText()
-
-        return super().focusOutEvent(event)
-
-class Task(QWidget):
+class TaskSet(QWidget):
     Status = Enum('Status', ['Ready', 'Working', 'Finished', 'Error'])
 
-    def __init__(self, name: str, data: TaskData, idx: int, dropFunc: Callable):
+    def __init__(self, name: str, data: TaskSetData, idx: int, dropFunc: Callable):
         super().__init__()
-        self.status = Task.Status.Ready
+        self.status = TaskSet.Status.Ready
         self.index = idx
         self.data = data
         self.dropFunc = dropFunc
@@ -162,11 +164,11 @@ class Task(QWidget):
 
         self.setMaximumHeight(60)
         self._content = QWidget()
-        self._task_bar = TaskBar(value=0.0)
+        self._task_bar = TaskSetBar(value=0.0)
         self._task_bar.updateColor(self.status)
         self._icon = QLabel(pixmap=fa.icon('fa5.circle', color='black').pixmap(24, 24))
         self._icon.setFixedWidth(24)
-        self._name = TaskInput(name)
+        self._name = TaskSetInput(name)
         self._name.textChanged.connect(self.adjustTextWidth)
         self._name.setStyleSheet('QLineEdit { background: transparent; color: black; border: 0px;}')
         self._drag = QLabel(pixmap=fa.icon('fa5s.ellipsis-v', color='black').pixmap(24,24))
@@ -186,7 +188,7 @@ class Task(QWidget):
         
         self._remove_task_btn = QPushButton("Remove Task")
         self._remove_task_btn.clicked.connect(self.dropSelf)
-        self._info = TaskInfo(self.data, self._remove_task_btn)
+        self._info = TaskSetInfo(self.data, self._remove_task_btn)
 
         self._layout = QGridLayout(self)
         self._layout.addWidget(self._info, 1, 0)
