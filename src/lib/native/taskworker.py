@@ -1,5 +1,4 @@
 from PySide6.QtCore import *
-from core.task import Task
 
 import time
 
@@ -25,7 +24,7 @@ class TaskWorker(QRunnable):
     Worker thread for STM tasks
     """
     
-    def __init__(self, task: Task):
+    def __init__(self, task):
         super().__init__()
         self.task = task
         self.signals = WorkerSignals()

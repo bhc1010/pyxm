@@ -86,6 +86,18 @@ class Ui_MainWindow(QMainWindow):
         self.lines_per_frame.addItems([f'{2**n}' for n in range(3, 13)])
         self.lines_per_frame.setCurrentIndex(5)
         self.lines_per_frame.setFixedWidth(150)
+        
+        self.bias_label = QLabel("Bias")
+        self.bias = ScientificSpinBox()
+        self.bias.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.bias.setValue(ExponentialNumber(300, -3))
+        self.bias.setUnits('V')
+        
+        self.set_point_label = QLabel("Set point current")
+        self.set_point = ScientificSpinBox()
+        self.set_point.setBounds(lower=ExponentialNumber(-500, -9), upper=ExponentialNumber(500, -9))
+        self.set_point.setValue(ExponentialNumber(100, -12))
+        self.set_point.setUnits('A')
 
         self.scan_size_label = QLabel("Size")
         self.scan_size = ScientificSpinBox()
@@ -118,90 +130,51 @@ class Ui_MainWindow(QMainWindow):
         self.line_time.setValue(ExponentialNumber(1, 0))
         self.line_time.setUnits('s')
 
-        self.scan_options_layout = QGridLayout()
-        self.scan_options_layout.setSizeConstraint(QLayout.SetDefaultConstraint)
-        self.scan_options_layout.setHorizontalSpacing(6)
-        self.scan_options_layout.addWidget(self.lines_per_frame_label, 0, 0, 1, 1)
-        self.scan_options_layout.addWidget(self.lines_per_frame, 0, 1, 1, 1)
-        self.scan_options_layout.addWidget(self.scan_size_label, 1, 0, 1, 1)
-        self.scan_options_layout.addWidget(self.scan_size, 1, 1, 1, 1)
-        self.scan_options_layout.addWidget(self.x_offset_label, 2, 0, 1, 1)
-        self.scan_options_layout.addWidget(self.x_offset, 2, 1, 1, 1)
-        self.scan_options_layout.addWidget(self.y_offset_label, 3, 0, 1, 1)
-        self.scan_options_layout.addWidget(self.y_offset, 3, 1, 1, 1)
-        self.scan_options_layout.addWidget(self.scan_speed_label, 4, 0, 1, 1)
-        self.scan_options_layout.addWidget(self.scan_speed, 4, 1, 1, 1)
-        self.scan_options_layout.addWidget(self.line_time_label, 5, 0, 1, 1)
-        self.scan_options_layout.addWidget(self.line_time, 5, 1, 1, 1)
-        self.scan_options.setLayout(self.scan_options_layout)
-
-        # Voltage Options
-        self.voltage_options = QGroupBox("Voltage Parameters", self.options_frame)
-        self.voltage_options.setFlat(True)
-
-        self.start_voltage_label = QLabel("Start voltage", self.voltage_options)
-        self.start_voltage = ScientificSpinBox()
-        self.start_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
-        self.start_voltage.setValue(ExponentialNumber(200, -3))
-        self.start_voltage.setUnits('V')
-
-        self.stop_voltage_label = QLabel("Stop voltage", self.voltage_options)
-        self.stop_voltage = ScientificSpinBox()
-        self.stop_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
-        self.stop_voltage.setValue(ExponentialNumber(1, 0))
-        self.stop_voltage.setUnits('V')
-
-        self.step_voltage_label = QLabel("Step voltage", self.voltage_options)
-        self.step_voltage = ScientificSpinBox()
-        self.step_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
-        self.step_voltage.setValue(ExponentialNumber(100, -3))
-        self.step_voltage.setUnits('V')
-        
-        self.set_point_label = QLabel("Set Point", self.voltage_options)
-        self.set_point = ScientificSpinBox()
-        self.set_point.setBounds(lower=ExponentialNumber(-5, -9), upper=ExponentialNumber(5, -9))
-        self.set_point.setValue(ExponentialNumber(120, -12))
-        self.set_point.setUnits('A')
-        
-        self.repetitions_label = QLabel("Repetitions", self.voltage_options)
+        self.repetitions_label = QLabel("Repetitions")
         self.repetitions = QSpinBox()
         self.repetitions.setValue(1)
         self.repetitions.setMinimum(1)
+        
+        img_param_widgets = [(self.bias_label, self.bias),
+                             (self.set_point_label, self.set_point),
+                             (self.scan_size_label, self.scan_size),
+                             (self.x_offset_label, self.x_offset),
+                             (self.y_offset_label, self.y_offset),
+                             (self.scan_speed_label, self.scan_speed),
+                             (self.line_time_label, self.line_time),
+                             (self.lines_per_frame_label, self.lines_per_frame),
+                             (self.repetitions_label, self.repetitions)]
+        
+        self.scan_options_layout = QGridLayout()
+        self.scan_options_layout.setSizeConstraint(QLayout.SetDefaultConstraint)
+        self.scan_options_layout.setHorizontalSpacing(6)
+        for (i, (label, widget)) in enumerate(img_param_widgets):    
+            self.scan_options_layout.addWidget(label, i, 0, 1, 1)
+            self.scan_options_layout.addWidget(widget, i, 1, 1, 1)
+            
+        self.scan_options.setLayout(self.scan_options_layout)
 
-        self.voltage_options_layout = QGridLayout()
-        self.voltage_options_layout.addWidget(self.start_voltage_label, 0, 0, 1, 1)
-        self.voltage_options_layout.addWidget(self.start_voltage, 0, 1, 1, 1)
-        self.voltage_options_layout.addWidget(self.stop_voltage_label, 1, 0, 1, 1)
-        self.voltage_options_layout.addWidget(self.stop_voltage, 1, 1, 1, 1)
-        self.voltage_options_layout.addWidget(self.step_voltage_label, 2, 0, 1, 1)
-        self.voltage_options_layout.addWidget(self.step_voltage, 2, 1, 1, 1)
-        self.voltage_options_layout.addWidget(self.set_point_label, 3, 0, 1, 1)
-        self.voltage_options_layout.addWidget(self.set_point, 3, 1, 1, 1)
-        self.voltage_options_layout.addWidget(self.repetitions_label, 4, 0, 1, 1)
-        self.voltage_options_layout.addWidget(self.repetitions, 4, 1, 1, 1)
-        self.voltage_options.setLayout(self.voltage_options_layout)
-
+        # Spec Parameters
         self.sts_options = QGroupBox("Spectroscopy Parameters", self.options_frame)
         self.sts_options.setFlat(True)
-        self.sts_options.setEnabled(False)
 
         self.sts_mode_label = QLabel("Spectroscopy mode", self.sts_options)
         self.sts_mode = QComboBox(self.sts_options)
         self.sts_mode.addItems(["None", "Point", "Line", "Region", "All"])
 
-        self.sts_start_voltage_label = QLabel("Start voltage", self.sts_options)
-        self.sts_start_voltage = ScientificSpinBox()
-        self.sts_start_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
-        self.sts_start_voltage.setValue(ExponentialNumber(-1, 0))
-        self.sts_start_voltage.setUnits('V')
+        self.sts_initial_voltage_label = QLabel("Initial voltage", self.sts_options)
+        self.sts_initial_voltage = ScientificSpinBox()
+        self.sts_initial_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.sts_initial_voltage.setValue(ExponentialNumber(-1, 0))
+        self.sts_initial_voltage.setUnits('V')
 
-        self.sts_stop_voltage_label = QLabel("Stop voltage", self.sts_options)
-        self.sts_stop_voltage = ScientificSpinBox()
-        self.sts_stop_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
-        self.sts_stop_voltage.setValue(ExponentialNumber(1, 0))
-        self.sts_stop_voltage.setUnits('V')
+        self.sts_final_voltage_label = QLabel("Final voltage", self.sts_options)
+        self.sts_final_voltage = ScientificSpinBox()
+        self.sts_final_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.sts_final_voltage.setValue(ExponentialNumber(1, 0))
+        self.sts_final_voltage.setUnits('V')
 
-        self.sts_step_voltage_label = QLabel("Step voltage", self.sts_options)
+        self.sts_step_voltage_label = QLabel("Voltage increment", self.sts_options)
         self.sts_step_voltage = ScientificSpinBox()
         self.sts_step_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
         self.sts_step_voltage.setValue(ExponentialNumber(25, -3))
@@ -213,18 +186,54 @@ class Ui_MainWindow(QMainWindow):
         self.sts_delay_time.setValue(ExponentialNumber(10, -3))
         self.sts_delay_time.setUnits('s')
         
+        spec_param_widgets = [(self.sts_mode_label, self.sts_mode),
+                             (self.sts_initial_voltage_label, self.sts_initial_voltage),
+                             (self.sts_final_voltage_label, self.sts_final_voltage),
+                             (self.sts_step_voltage_label, self.sts_step_voltage),
+                             (self.sts_delay_time_label, self.sts_delay_time)]
+        
         self.sts_options_layout = QGridLayout()
-        self.sts_options_layout.addWidget(self.sts_mode_label, 0, 0, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_mode, 0, 1, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_start_voltage_label, 1, 0, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_start_voltage, 1, 1, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_stop_voltage_label, 2, 0, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_stop_voltage, 2, 1, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_step_voltage_label, 3, 0, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_step_voltage, 3, 1, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_delay_time_label, 4, 0, 1, 1)
-        self.sts_options_layout.addWidget(self.sts_delay_time, 4, 1, 1, 1)
+        for (i, (label, widget)) in enumerate(spec_param_widgets):    
+            self.sts_options_layout.addWidget(label, i, 0, 1, 1)
+            self.sts_options_layout.addWidget(widget, i, 1, 1, 1)
         self.sts_options.setLayout(self.sts_options_layout)
+
+        # Sweep Options
+        self.sweep_options = QGroupBox("Sweep Options", self.options_frame)
+        self.sweep_options.setFlat(True)
+        
+        self.sweep_parameter_label = QLabel("Sweep parameter")
+        self.sweep_parameter = QComboBox()
+        self.sweep_parameter.addItems(["None", "Bias", "Set point current", "Size", "X offset", "Y offset"])
+
+        self.sweep_start_label = QLabel("Start")
+        self.sweep_start = ScientificSpinBox()
+        self.sweep_start.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.sweep_start.setValue(ExponentialNumber(200, -3))
+        self.sweep_start.setUnits('V')
+
+        self.sweep_stop_label = QLabel("Stop")
+        self.sweep_stop = ScientificSpinBox()
+        self.sweep_stop.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.sweep_stop.setValue(ExponentialNumber(1, 0))
+        self.sweep_stop.setUnits('V')
+
+        self.sweep_step_label = QLabel("Step")
+        self.sweep_step = ScientificSpinBox()
+        self.sweep_step.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.sweep_step.setValue(ExponentialNumber(100, -3))
+        self.sweep_step.setUnits('V')
+
+        sweep_opt_widgets = [(self.sweep_parameter_label, self.sweep_parameter),
+                             (self.sweep_start_label, self.sweep_start),
+                             (self.sweep_stop_label, self.sweep_stop),
+                             (self.sweep_step_label, self.sweep_step)]
+        
+        self.sweep_options_layout = QGridLayout()
+        for (i, (label, widget)) in enumerate(sweep_opt_widgets):    
+            self.sweep_options_layout.addWidget(label, i, 0, 1, 1)
+            self.sweep_options_layout.addWidget(widget, i, 1, 1, 1)
+        self.sweep_options.setLayout(self.sweep_options_layout)
 
         # Spacing
         self.options_spacing = QSpacerItem(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
@@ -242,8 +251,8 @@ class Ui_MainWindow(QMainWindow):
         self.options_frame_layout.setSpacing(2)
         self.options_frame_layout.setContentsMargins(0, 0, 0, 0)
         self.options_frame_layout.addWidget(self.scan_options)
-        self.options_frame_layout.addWidget(self.voltage_options)
         self.options_frame_layout.addWidget(self.sts_options)
+        self.options_frame_layout.addWidget(self.sweep_options)
         self.options_frame_layout.addItem(self.options_spacing)
         self.options_frame_layout.addWidget(self.total_images)
         self.options_frame_layout.addWidget(self.time_to_finish)
@@ -281,13 +290,13 @@ class Ui_MainWindow(QMainWindow):
         self.y_offset.value_changed.connect(self.update_scan_position)
         self.lines_per_frame.currentIndexChanged.connect(self.update_time_to_finish)
         self.line_time.value_changed.connect(self.update_time_to_finish)
-        self.start_voltage.value_changed.connect(self.update_time_to_finish)
-        self.stop_voltage.value_changed.connect(self.update_time_to_finish)
-        self.step_voltage.value_changed.connect(self.update_time_to_finish)
+        # self.start_voltage.value_changed.connect(self.update_time_to_finish)
+        # self.stop_voltage.value_changed.connect(self.update_time_to_finish)
+        # self.step_voltage.value_changed.connect(self.update_time_to_finish)
         self.repetitions.valueChanged.connect(self.update_time_to_finish)
-        self.start_voltage.value_changed.connect(self.update_total_images)
-        self.stop_voltage.value_changed.connect(self.update_total_images)
-        self.step_voltage.value_changed.connect(self.update_total_images)
+        # self.start_voltage.value_changed.connect(self.update_total_images)
+        # self.stop_voltage.value_changed.connect(self.update_total_images)
+        # self.step_voltage.value_changed.connect(self.update_total_images)
         self.repetitions.valueChanged.connect(self.update_total_images)
 
         self.play.clicked.connect(self.start_task)
@@ -347,8 +356,9 @@ class Ui_MainWindow(QMainWindow):
         self.scan_size.setValue(ExponentialNumber(scan_rect.width(), -9))
         
     def update_time_to_finish(self):
-        N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
-        N *= self.repetitions.value()
+        # N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
+        # N *= self.repetitions.value()
+        N = 1
         total_time = 2 * self.line_time.value.to_float() * float(self.lines_per_frame.currentText()) * N
         
         days = int(total_time // (24*3600))
@@ -363,6 +373,7 @@ class Ui_MainWindow(QMainWindow):
         self.time_to_finish.setText(f'Time to finish: {time_to_finish}')
         
     def update_total_images(self):
-        N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
-        N *= self.repetitions.value()
+        # N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
+        # N *= self.repetitions.value()
+        N=1
         self.total_images.setText(f"Total images: {int(N)}")
