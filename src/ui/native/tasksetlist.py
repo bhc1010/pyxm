@@ -27,12 +27,12 @@ class TaskSetList(QGroupBox):
         self.layout().addWidget(self._scrollarea)
         self.layout().setContentsMargins(0,0,0,0)
 
-    def add_task_set(self, task_set_name, task_set_data: TaskSetData):
-        task_set = TaskSet(name=task_set_name, data=task_set_data, idx=len(self.task_sets), dropFunc=self.drop_task)
+    def add_task_set(self, data: TaskSetData):
+        task_set = TaskSet(name=data.name, data=data, idx=len(self.task_sets), dropFunc=self.drop_task)
         task_set.adjustTextWidth()
 
         self.task_sets.append(task_set)
-        self.all_tasks.append(task_set.data.tasks)
+        self.all_tasks.extend(task_set.tasks)
         self._layout.addWidget(task_set)
 
     def drop_task(self, idx):
@@ -43,8 +43,8 @@ class TaskSetList(QGroupBox):
         dlg.setIcon(QMessageBox.Question)
 
         if dlg.exec_() == QMessageBox.Yes:
-            self.tasks.pop(idx)
-            for (i, task) in enumerate(self.tasks):
-                task.setIndex(i)
+            self.task_sets.pop(idx)
+            for (i, task_set) in enumerate(self.task_sets):
+                task_set.setIndex(i)
             self._layout.takeAt(idx).widget().deleteLater()
 

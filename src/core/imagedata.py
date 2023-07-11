@@ -1,14 +1,12 @@
-from dataclasses import dataclass
-from datetime import datetime
-from core.exponentialnumber import ExponentialNumber
+from core.tasksetdata import TaskSetData
 
-@dataclass
 class ImageData:
-    size: ExponentialNumber
-    x_offset: ExponentialNumber
-    y_offset: ExponentialNumber
-    bias: ExponentialNumber
-    set_point: ExponentialNumber
-    line_time: ExponentialNumber
-    lines_per_frame: int
-    repetitions: int
+    def __init__(self, data: TaskSetData):
+        self.size = data.size
+        self.x_offset = data.x_offset
+        self.y_offset = data.y_offset
+        self.bias = data.bias
+        self.set_point = data.set_point
+        self.line_time = data.line_time
+        self.lines_per_frame = data.lines_per_frame
+        self.repetitions = data.repetitions

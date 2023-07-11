@@ -1,6 +1,6 @@
 import numpy as np
 from enum import Enum
-from typing import Callable
+from typing import Callable, List, Union
 
 from PySide6 import QtCore, QtGui
 from PySide6.QtGui import *
@@ -8,13 +8,17 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 import qtawesome as fa
 
-from core.tasksetdata import TaskSetData
+from core.exponentialnumber import ExponentialNumber
+from core.tasksetdata import TaskSetData, SweepParameter
+from core.taskdata import TaskData, TaskType
+from core.imagedata import ImageData
+from core.specdata import SpecData
 
 def clamp10(value):
     return max(min(value, 1.0), 0.0)
 
 class TaskSetBar(QWidget):
-    def __init__(self, value = 0.5, padding = 5, *args, **kwargs):
+    def __init__(self, value = 0.0, padding = 5, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
         self.value = clamp10(value)
@@ -104,10 +108,24 @@ class TaskSetInput(QLineEdit):
 
         return super().focusOutEvent(event)
 
+class TaskItem(QCheckBox):
+    def __init__(self, data: TaskData, sweep_param: SweepParameter):
+        super().__init__(checked=True)
+        self.data = data.inner
+        self.dtype = data.dtype
+        self.completed = False
+
+        match sweep_param:
+            case SweepParameter.bias:
+                self.setText(f'Bias: {self.data.bias}V')
+            case SweepParameter.size:
+                self.setText(f'Size: {self.data.size}m')
+
 class TaskSetInfo(QWidget):
-    def __init__(self, data: TaskSetData, remove_task_btn: QPushButton):
+    def __init__(self, data: TaskSetData, tasks: List[TaskData], remove_task_btn: QPushButton):
         super().__init__(minimumHeight=0, maximumHeight=0)
-        
+        self.task_items = list()
+
         self.background = QColor(245, 245, 245)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Expanding)
         
@@ -115,22 +133,36 @@ class TaskSetInfo(QWidget):
         self._content.setStyleSheet('background: transparent')
         self._layout = QVBoxLayout(self._content)
         self._layout.setContentsMargins(20,5,20,10)
-        ## TODO: TastSetData needs to be given a list of tasks before this step. then we decide based on the datatype what to display.
-        ## TODO: Custom TaskItem widget that subclasses QCheckBox and contains an index that matches its place in the taskset
-        bias_range = np.arange(data.start_voltage.to_float(), data.stop_voltage.to_float() + data.step_voltage.to_float(), data.step_voltage.to_float())
     
         sublayout = QGridLayout()
-        sublayout.addWidget(QLabel(f"Size: {data.size}m"), 0, 0)
-        sublayout.addWidget(QLabel(f"Offset: ({data.x_offset}m, {data.y_offset}m)"), 1, 0)
-        sublayout.addWidget(QLabel(f"Set point: {data.set_point}A"), 2, 0)
-        sublayout.addWidget(QLabel(f"Lines per frame: {data.lines_per_frame}"), 0, 1)
-        sublayout.addWidget(QLabel(f"Line time: {data.line_time.to_float()}s"), 1, 1)
-        sublayout.addWidget(QLabel(f"Repetitions: {data.repetitions}"), 2, 1)
+        bias = QLabel(f'Bias : {data.bias}V')
+        set_point = QLabel(f"Set point: {data.set_point}A")
+        size = QLabel(f"Size: {data.size}m")
+        position = QLabel(f"Position: ({data.x_offset}m, {data.y_offset}m)")
+        lines_per_frame = QLabel(f"Lines per frame: {data.lines_per_frame}")
+        line_time = QLabel(f"Line time: {data.line_time.to_float()}s")
+        sublayout.addWidget(bias, 0, 0)
+        sublayout.addWidget(set_point, 0, 1)
+        sublayout.addWidget(size, 1, 0)
+        sublayout.addWidget(position, 1, 1)
+        sublayout.addWidget(line_time, 2, 0)
+        sublayout.addWidget(lines_per_frame, 2, 1)
+
+        match data.sweep_parameter:
+            case SweepParameter.bias:
+                bias.setText("Bias: -")
+            case SweepParameter.size:
+                size.setText("Size: -")
+
         self._layout.addLayout(sublayout)
-        self._layout.addWidget(QLabel(f"Total Images: {data.total_images}"))
+        repetitions = QLabel(f"Repetitions: {data.repetitions}")
+        self._layout.addWidget(repetitions)
+        self._layout.addWidget(QLabel(f"Total Tasks: {len(tasks)}"))
         self._layout.addWidget(QLabel(f"Time remaining: {data.time_to_finish}"))
-        for bias in bias_range:
-            self._layout.addWidget(QCheckBox(f"Bias: {round(bias, 4)} V", checked=True))
+        
+        for task in tasks:
+            self.task_items.append(TaskItem(task, data.sweep_parameter))
+            self._layout.addWidget(self.task_items[-1])
         self._layout.addWidget(remove_task_btn)
 
         self.setLayout(QGridLayout())
@@ -159,12 +191,13 @@ class TaskSet(QWidget):
         self.status = TaskSet.Status.Ready
         self.index = idx
         self.data = data
+        self.tasks = self.create_tasks(data)
         self.dropFunc = dropFunc
         self._selected = False
 
         self.setMaximumHeight(60)
         self._content = QWidget()
-        self._task_bar = TaskSetBar(value=0.0)
+        self._task_bar = TaskSetBar()
         self._task_bar.updateColor(self.status)
         self._icon = QLabel(pixmap=fa.icon('fa5.circle', color='black').pixmap(24, 24))
         self._icon.setFixedWidth(24)
@@ -188,7 +221,7 @@ class TaskSet(QWidget):
         
         self._remove_task_btn = QPushButton("Remove Task")
         self._remove_task_btn.clicked.connect(self.dropSelf)
-        self._info = TaskSetInfo(self.data, self._remove_task_btn)
+        self._info = TaskSetInfo(self.data, self.tasks, self._remove_task_btn)
 
         self._layout = QGridLayout(self)
         self._layout.addWidget(self._info, 1, 0)
@@ -204,6 +237,27 @@ class TaskSet(QWidget):
         self._info_anim = QParallelAnimationGroup(self)
         self.setInfoAnimation()
         
+    def create_tasks(self, data: TaskSetData) -> List[TaskData]:
+        tasks = list()
+        match data.sweep_parameter:
+            case SweepParameter.none:
+                img = ImageData(data)
+                tasks.append(TaskData(inner=img, dtype=TaskType.Image))
+            case SweepParameter.bias:
+                bias_range = np.arange(start=data.sweep_start.to_float(), stop=data.sweep_stop.to_float() + data.sweep_step.to_float(), step=data.sweep_step.to_float()) 
+                for bias in bias_range:
+                    img = ImageData(data)
+                    img.bias = ExponentialNumber.from_float(bias)
+                    tasks.append(TaskData(inner=img, dtype=TaskType.Image, completed=False))
+            case SweepParameter.size:
+                size_range = np.arange(start=data.sweep_start.to_float(), stop=data.sweep_stop.to_float() + data.sweep_step.to_float(), step=data.sweep_step.to_float())
+                for size in size_range:
+                    img = ImageData(data)
+                    img.size = ExponentialNumber.from_float(size)
+                    tasks.append(TaskData(inner=img, dtype=TaskType.Image))
+
+        return tasks
+
     def setInfoAnimation(self):
         self._info_anim.clear()
         self._info_anim.addAnimation(QPropertyAnimation(self, b"minimumHeight"))
@@ -267,6 +321,12 @@ class TaskSet(QWidget):
         fixedWidth = min(width + padding, 0.6 * self.rect().width())
         self._name.setFixedWidth(fixedWidth)
 
+    def update_task_bar(self):
+        completed_tasks = [item for item in self._info.task_items if item.completed]
+        val = len(completed_tasks) / len(self._info.task_items)
+        self._task_bar.value = val
+        self._task_bar.repaint()
+
     def setIndex(self, i):
         self.index = i
 
@@ -276,4 +336,5 @@ class TaskSet(QWidget):
     def resizeEvent(self, event) -> None:
         self.adjustTextWidth()
         return super().resizeEvent(event)
+    
     

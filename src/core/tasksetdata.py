@@ -3,7 +3,7 @@ from enum import Enum
 
 from core.exponentialnumber import ExponentialNumber
 
-SweepParameter = Enum("SweepParameter", ["bias", "size", "position"])
+SweepParameter = Enum("SweepParameter", ["none", "bias", "set_point", "size", "x_offset", "y_offset"])
 
 @dataclass
 class TaskSetData:

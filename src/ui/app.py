@@ -3,13 +3,14 @@ from PySide6.QtWidgets import *
 from datetime import datetime
 
 from core.exponentialnumber import ExponentialNumber
-from core.tasksetdata import TaskSetData
+from core.tasksetdata import TaskSetData, SweepParameter
 
 from lib.native.taskworker import TaskWorker
 
 from ui.native.scanarea import ScanArea
 from ui.native.scientificspinbox import ScientificSpinBox
 from ui.native.tasksetlist import TaskSetList
+from ui.native.taskset import TaskSet
 from ui.native.togglebutton import ToggleButton
 
 
@@ -160,7 +161,7 @@ class Ui_MainWindow(QMainWindow):
 
         self.sts_mode_label = QLabel("Spectroscopy mode", self.sts_options)
         self.sts_mode = QComboBox(self.sts_options)
-        self.sts_mode.addItems(["None", "Point", "Line", "Region", "All"])
+        self.sts_mode.addItems(["None", "Point", "Line", "Region", "All", "Pixel"])
 
         self.sts_initial_voltage_label = QLabel("Initial voltage", self.sts_options)
         self.sts_initial_voltage = ScientificSpinBox()
@@ -197,6 +198,7 @@ class Ui_MainWindow(QMainWindow):
             self.sts_options_layout.addWidget(label, i, 0, 1, 1)
             self.sts_options_layout.addWidget(widget, i, 1, 1, 1)
         self.sts_options.setLayout(self.sts_options_layout)
+        self.set_enable_spectroscopy()
 
         # Sweep Options
         self.sweep_options = QGroupBox("Sweep Options", self.options_frame)
@@ -204,21 +206,22 @@ class Ui_MainWindow(QMainWindow):
         
         self.sweep_parameter_label = QLabel("Sweep parameter")
         self.sweep_parameter = QComboBox()
-        self.sweep_parameter.addItems(["None", "Bias", "Set point current", "Size", "X offset", "Y offset"])
+        self.sweep_parameter.addItems(["None", "Bias", "Size"])#, "Set point current", "Size", "X offset", "Y offset"])
+        self.sweep_parameter.setCurrentText("Bias")
 
-        self.sweep_start_label = QLabel("Start")
+        self.sweep_start_label = QLabel("Initial value")
         self.sweep_start = ScientificSpinBox()
         self.sweep_start.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
         self.sweep_start.setValue(ExponentialNumber(200, -3))
         self.sweep_start.setUnits('V')
 
-        self.sweep_stop_label = QLabel("Stop")
+        self.sweep_stop_label = QLabel("Final value")
         self.sweep_stop = ScientificSpinBox()
         self.sweep_stop.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
         self.sweep_stop.setValue(ExponentialNumber(1, 0))
         self.sweep_stop.setUnits('V')
 
-        self.sweep_step_label = QLabel("Step")
+        self.sweep_step_label = QLabel("Increment")
         self.sweep_step = ScientificSpinBox()
         self.sweep_step.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
         self.sweep_step.setValue(ExponentialNumber(100, -3))
@@ -244,7 +247,7 @@ class Ui_MainWindow(QMainWindow):
 
         # Add task
         self.task_set_name = QLineEdit(self.options_frame, objectName="task_set_name")
-        self.add_task_btn = QPushButton("Add Task", self.options_frame, objectName="add_task_btn")
+        self.add_task_btn = QPushButton("Add Task Set", self.options_frame, objectName="add_task_btn")
 
         # Options layout
         self.options_frame_layout = QVBoxLayout(self.options_frame)
@@ -260,7 +263,7 @@ class Ui_MainWindow(QMainWindow):
         self.options_frame_layout.addWidget(self.add_task_btn)
 
         ## Task List
-        self.task_set_list = TaskSetList(title="Task List", objectName='task_list')
+        self.task_set_list = TaskSetList(title="Task Set List", objectName='task_list')
         self.task_set_list.setMinimumWidth(300)
         self.task_set_list.setMaximumWidth(525)
         
@@ -286,51 +289,98 @@ class Ui_MainWindow(QMainWindow):
         self.task_set_name.returnPressed.connect(self.add_task_set)
         self.scan_area.scan_rect_moved.connect(self.scan_rect_moved)
         self.scan_size.value_changed.connect(self.update_scan_size)
+        
+        # Scan position
         self.x_offset.value_changed.connect(self.update_scan_position)
         self.y_offset.value_changed.connect(self.update_scan_position)
+        
+        # Time to finish
         self.lines_per_frame.currentIndexChanged.connect(self.update_time_to_finish)
         self.line_time.value_changed.connect(self.update_time_to_finish)
-        # self.start_voltage.value_changed.connect(self.update_time_to_finish)
-        # self.stop_voltage.value_changed.connect(self.update_time_to_finish)
-        # self.step_voltage.value_changed.connect(self.update_time_to_finish)
+        self.sweep_start.value_changed.connect(self.update_time_to_finish)
+        self.sweep_stop.value_changed.connect(self.update_time_to_finish)
+        self.sweep_step.value_changed.connect(self.update_time_to_finish)
         self.repetitions.valueChanged.connect(self.update_time_to_finish)
-        # self.start_voltage.value_changed.connect(self.update_total_images)
-        # self.stop_voltage.value_changed.connect(self.update_total_images)
-        # self.step_voltage.value_changed.connect(self.update_total_images)
+
+        # Total images
+        self.sweep_start.value_changed.connect(self.update_total_images)
+        self.sweep_stop.value_changed.connect(self.update_total_images)
+        self.sweep_step.value_changed.connect(self.update_total_images)
         self.repetitions.valueChanged.connect(self.update_total_images)
 
+        # Spectroscopy
+        self.sts_mode.currentIndexChanged.connect(self.set_enable_spectroscopy)
+
+        # Sweep param
+        self.sweep_parameter.currentIndexChanged.connect(self.update_sweep_params)
+
+        # Toolbar
         self.play.clicked.connect(self.start_task)
 
+
     def start_task(self):
-        if len(self.task_set_list.tasks) > 0:
-            currentTask = self.task_set_list.tasks[0].data
-            worker = TaskWorker(currentTask)
+        if len(self.task_set_list.all_tasks) > 0:
+            for task_set in self.task_set_list.task_sets:
+                if task_set.status in [TaskSet.Status.Ready, TaskSet.Status.Working]:
+                    current_task_set = task_set
+                    break
+
+            for (i, task) in enumerate(current_task_set.tasks):
+                if current_task_set._info.task_items[i].isEnabled() and not task.completed:
+                    current_task = task
+                    print(task.inner.bias)
+                    break
+
+            worker = TaskWorker(current_task, i)
             worker.signals.finished.connect(self.restart_task_worker)
+            current_task_set.setStatus(TaskSet.Status.Working)
             self.threadpool.start(worker)
             
-    def restart_task_worker(self):
+    def restart_task_worker(self, i: int):
         '''
             Update taskbar value.
             Remove task from list
         '''
-        print("finished!")
+        for task_set in self.task_set_list.task_sets:
+                if task_set.status in [TaskSet.Status.Ready, TaskSet.Status.Working]:
+                    running_task_set = task_set
+                    running_task = running_task_set._info.task_items[i]
+                    break
+        running_task.completed = True
+        running_task.setEnabled(False)
+        running_task_set.update_task_bar()
+
+        if not self.pause.isChecked():
+            self.start_task()
+        
                 
     def add_task_set(self):
+        sweep_param = SweepParameter.none
+        match self.sweep_parameter.currentText():
+            case "None":
+                sweep_param = SweepParameter.none
+            case "Bias":
+                sweep_param = SweepParameter.bias
+            case "Size":
+                sweep_param = SweepParameter.size
+        
         task_set_data = TaskSetData(name=self.task_set_name.text(),
-                             date=datetime.now(),
-                             repetitions=self.repetitions.value(),
-                             total_tasks=int(self.total_images.text().split(": ")[1]),
-                             time_to_finish=self.time_to_finish.text().split(": ")[1],
-                             lines_per_frame=int(self.lines_per_frame.currentText()),
-                             size=self.scan_size.value,
-                             set_point=self.set_point.value,
-                             x_offset=self.x_offset.value,
-                             y_offset=self.y_offset.value,
-                             scan_speed=self.scan_speed.value,
-                             line_time=self.line_time.value,
-                             tasks=[])
+                                    size=self.scan_size.value,
+                                    x_offset=self.x_offset.value,
+                                    y_offset=self.y_offset.value,
+                                    bias=self.bias.value,
+                                    set_point=self.set_point.value,
+                                    line_time=self.line_time.value,
+                                    lines_per_frame=int(self.lines_per_frame.currentText()),
+                                    repetitions=self.repetitions.value(),
+                                    sweep_parameter=sweep_param,
+                                    sweep_start=self.sweep_start.value,
+                                    sweep_stop=self.sweep_stop.value,
+                                    sweep_step=self.sweep_step.value,
+                                    total_tasks=int(self.total_images.text().split(": ")[1]),
+                                    time_to_finish=self.time_to_finish.text().split(": ")[1])
 
-        self.task_set_list.add_task_set(task_set_name=self.task_set_name.text(), task_set_data=task_set_data)
+        self.task_set_list.add_task_set(task_set_data)
 
     def update_scan_size(self):
         newRect = self.scan_area.scan_rect.scene_inner_rect()
@@ -356,9 +406,8 @@ class Ui_MainWindow(QMainWindow):
         self.scan_size.setValue(ExponentialNumber(scan_rect.width(), -9))
         
     def update_time_to_finish(self):
-        # N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
-        # N *= self.repetitions.value()
-        N = 1
+        N = abs((self.sweep_start.value.to_float() - self.sweep_stop.value.to_float()) // self.sweep_step.value.to_float())
+        N *= self.repetitions.value()
         total_time = 2 * self.line_time.value.to_float() * float(self.lines_per_frame.currentText()) * N
         
         days = int(total_time // (24*3600))
@@ -373,7 +422,49 @@ class Ui_MainWindow(QMainWindow):
         self.time_to_finish.setText(f'Time to finish: {time_to_finish}')
         
     def update_total_images(self):
-        # N = abs((self.start_voltage.value.to_float() - self.stop_voltage.value.to_float()) // self.step_voltage.value.to_float())
-        # N *= self.repetitions.value()
-        N=1
+        N = abs((self.sweep_start.value.to_float() - self.sweep_stop.value.to_float()) // self.sweep_step.value.to_float())
+        N *= self.repetitions.value()
         self.total_images.setText(f"Total images: {int(N)}")
+
+    def set_sweep_enabled(self, value: bool):
+        self.sweep_start.setEnabled(value)
+        self.sweep_stop.setEnabled(value)
+        self.sweep_step.setEnabled(value)
+
+    def set_sweep_units(self, units: str):
+        self.sweep_start.setUnits(units)
+        self.sweep_stop.setUnits(units)
+        self.sweep_step.setUnits(units)
+
+    def set_sweep_vals(self, val: ExponentialNumber, lower: ExponentialNumber, upper: ExponentialNumber):
+        self.sweep_start.setBounds(lower, upper)
+        self.sweep_start.setValue(val.copy())
+        self.sweep_stop.setBounds(lower, upper)
+        self.sweep_stop.setValue(val.copy())
+        self.sweep_step.setBounds(lower, upper)
+        self.sweep_step.setValue(val.copy())
+
+    def update_sweep_params(self):
+        sweep_param = self.sweep_parameter.currentText()
+        match sweep_param:
+            case "None":
+                self.set_sweep_enabled(False)
+            case "Bias":
+                self.set_sweep_enabled(True)
+                self.set_sweep_vals(self.bias.value, lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+                self.set_sweep_units("V")
+            case "Size":
+                self.set_sweep_enabled(True)
+                self.set_sweep_vals(self.scan_size.value, lower=ExponentialNumber(2.5, -12), upper=ExponentialNumber(3, -6))
+                self.set_sweep_units("m")
+
+    def set_enable_spectroscopy(self):
+        match self.sts_mode.currentText():
+            case 'None':
+                val = False
+            case _:
+                val = True
+        self.sts_initial_voltage.setEnabled(val)
+        self.sts_final_voltage.setEnabled(val)
+        self.sts_step_voltage.setEnabled(val)
+        self.sts_delay_time.setEnabled(val)
