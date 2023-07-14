@@ -38,6 +38,7 @@ class TaskSetBar(QWidget):
                 self._background_color = QColor(102, 157, 246)
                 self._bar_color = QColor(21, 101, 192)
             case TaskSet.Status.Finished:
+                print("WHAT")
                 self._background_color = QColor(66, 219, 99)
                 self._bar_color = self._background_color
             case TaskSet.Status.Error:
@@ -111,15 +112,17 @@ class TaskSetInput(QLineEdit):
 class TaskItem(QCheckBox):
     def __init__(self, data: TaskData, sweep_param: SweepParameter):
         super().__init__(checked=True)
-        self.data = data.inner
+        self.data = data
         self.dtype = data.dtype
-        self.completed = False
 
         match sweep_param:
             case SweepParameter.bias:
-                self.setText(f'Bias: {self.data.bias}V')
+                self.setText(f'Bias: {self.data.inner.bias}V')
             case SweepParameter.size:
-                self.setText(f'Size: {self.data.size}m')
+                self.setText(f'Size: {self.data.inner.size}m')
+
+    def set_completed(self, val: bool):
+        self.data.completed = val
 
 class TaskSetInfo(QWidget):
     def __init__(self, data: TaskSetData, tasks: List[TaskData], remove_task_btn: QPushButton):
@@ -280,7 +283,8 @@ class TaskSet(QWidget):
 
     def setStatus(self, status: Status):
         self.status = status
-        self._task_bar.updateColor(self.status)
+        self._task_bar.updateColor(status)
+        self.update_task_bar()
 
     def eventFilter(self, obj, ev):
         
@@ -322,7 +326,7 @@ class TaskSet(QWidget):
         self._name.setFixedWidth(fixedWidth)
 
     def update_task_bar(self):
-        completed_tasks = [item for item in self._info.task_items if item.completed]
+        completed_tasks = [item for item in self._info.task_items if item.data.completed]
         val = len(completed_tasks) / len(self._info.task_items)
         self._task_bar.value = val
         self._task_bar.repaint()

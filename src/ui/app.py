@@ -25,6 +25,7 @@ class Ui_MainWindow(QMainWindow):
         self.centralwidget = QWidget(self)
 
         ## ------- Task threadpool ----- ##
+        self.running = False
         self.threadpool = QThreadPool()
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
@@ -317,42 +318,62 @@ class Ui_MainWindow(QMainWindow):
         # Toolbar
         self.play.clicked.connect(self.start_task)
 
+    def play_clicked(self):
+        if not self.running:
+            self.start_task()
 
     def start_task(self):
+        current_task_set = None
+        current_task = None
+
         if len(self.task_set_list.all_tasks) > 0:
             for task_set in self.task_set_list.task_sets:
-                if task_set.status in [TaskSet.Status.Ready, TaskSet.Status.Working]:
+                completed_tasks = [task for task in task_set.tasks if task.completed]
+                if len(completed_tasks) < len(task_set.tasks):
                     current_task_set = task_set
                     break
+                task_set.setStatus(TaskSet.Status.Finished)
 
-            for (i, task) in enumerate(current_task_set.tasks):
-                if current_task_set._info.task_items[i].isEnabled() and not task.completed:
-                    current_task = task
-                    print(task.inner.bias)
-                    break
-
-            worker = TaskWorker(current_task, i)
-            worker.signals.finished.connect(self.restart_task_worker)
-            current_task_set.setStatus(TaskSet.Status.Working)
-            self.threadpool.start(worker)
+            if current_task_set is not None:    
+                for (i, task) in enumerate(current_task_set.tasks):
+                    print(f'{i} : {task.completed}')
+                    if not task.completed:
+                        current_task = task
+                        break
+                
+                if current_task is not None:
+                    worker = TaskWorker(current_task, i)
+                    worker.signals.finished.connect(self.restart_task_worker)
+                    current_task_set.setStatus(TaskSet.Status.Working)
+                    self.threadpool.start(worker)
+                    self.running = True
             
     def restart_task_worker(self, i: int):
         '''
             Update taskbar value.
             Remove task from list
         '''
-        for task_set in self.task_set_list.task_sets:
+        if len(self.task_set_list.all_tasks) > 0:
+            for task_set in self.task_set_list.task_sets:
                 if task_set.status in [TaskSet.Status.Ready, TaskSet.Status.Working]:
                     running_task_set = task_set
-                    running_task = running_task_set._info.task_items[i]
+                    running_task_item = running_task_set._info.task_items[i]
+                    running_task = running_task_set.tasks[i]
                     break
-        running_task.completed = True
-        running_task.setEnabled(False)
-        running_task_set.update_task_bar()
+            # print(running_task_set.tasks[i].completed)
+            running_task.completed = True
+            # print(running_task_set.tasks[i].completed)
+            running_task_item.setEnabled(False)
+            running_task_set.update_task_bar()
+            self.task_set_list.all_tasks.pop(0)
 
-        if not self.pause.isChecked():
-            self.start_task()
-        
+            if not self.pause.isChecked():
+                self.start_task()
+            else:
+                self.running = False
+        else:
+            self.running = False
+            
                 
     def add_task_set(self):
         sweep_param = SweepParameter.none
