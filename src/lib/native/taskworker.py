@@ -60,9 +60,9 @@ class TaskWorker(QRunnable):
             This method is the main entry point for the worker thread. It executes the STM task defined in the 'task' attribute.
         """
         print(f"Task started : {self.task.inner.bias}")
-        time.sleep(1)
 
-        # self.set_stm_params(self.task.inner)
+        self.set_stm_params(self.task.inner)
+        time.sleep(5)
         # result = self.start_procedure()
 
         self.signals.finished.emit()
