@@ -3,7 +3,7 @@ from typing import Union
 from PySide6.QtCore import *
 
 from core.vector2 import Vector2
-from core.taskdata import TaskData, TaskType
+from core.taskdata import TaskData
 from core.imagedata import ImageData
 from core.specdata import SpecData
 from lib.native.stm import STM
@@ -99,7 +99,7 @@ class TaskWorker(QRunnable):
                 str: The result of the STM procedure.
         """
         match self.task.dtype:
-            case TaskType.Image:
+            case TaskData.TaskType.Image:
                 return self.stm.start_procedure('dI-dV Map Scan Speed')
             case _:
                 return 'None'

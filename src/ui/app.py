@@ -2,7 +2,7 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 
 from core.exponentialnumber import ExponentialNumber
-from core.tasksetdata import TaskSetData, SweepParameter
+from core.tasksetdata import TaskSetData
 
 from lib.native.taskworker import TaskWorker
 
@@ -569,14 +569,14 @@ class Ui_MainWindow(QMainWindow):
                 This method is responsible for extracting the values entered by the user for various task parameters,
                 creating a TaskSetData object, and adding it to the task list for future execution.
         """
-        sweep_param = SweepParameter.none
+        sweep_param = TaskSetData.SweepParameter.none
         match self.sweep_parameter.currentText():
             case "None":
-                sweep_param = SweepParameter.none
+                sweep_param = TaskSetData.SweepParameter.none
             case "Bias":
-                sweep_param = SweepParameter.bias
+                sweep_param = TaskSetData.SweepParameter.bias
             case "Size":
-                sweep_param = SweepParameter.size
+                sweep_param = TaskSetData.SweepParameter.size
         
         task_set_data = TaskSetData(name=self.task_set_name.text(),
                                     size=self.scan_size.value,

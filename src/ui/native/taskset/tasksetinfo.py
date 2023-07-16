@@ -4,7 +4,7 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from typing import List
 
-from core.tasksetdata import TaskSetData, SweepParameter
+from core.tasksetdata import TaskSetData
 from core.taskdata import TaskData
 
 class TaskSetInfo(QWidget):
@@ -54,9 +54,9 @@ class TaskSetInfo(QWidget):
         sublayout.addWidget(lines_per_frame, 2, 1)
 
         match data.sweep_parameter:
-            case SweepParameter.bias:
+            case TaskSetData.SweepParameter.bias:
                 bias.setText("Bias: -")
-            case SweepParameter.size:
+            case TaskSetData.SweepParameter.size:
                 size.setText("Size: -")
 
         self._layout.addLayout(sublayout)
@@ -68,9 +68,9 @@ class TaskSetInfo(QWidget):
         for task in tasks:
             task_item = QCheckBox(checked=True)
             match data.sweep_parameter:
-                case SweepParameter.bias:
+                case TaskSetData.SweepParameter.bias:
                     task_item.setText(f'Bias: {task.inner.bias}V')
-                case SweepParameter.size:
+                case TaskSetData.SweepParameter.size:
                     task_item.setText(f'Size: {task.inner.size}m')
             self.task_items.append(task_item)
             self._layout.addWidget(self.task_items[-1])

@@ -9,8 +9,8 @@ from PySide6.QtWidgets import *
 import qtawesome as fa
 
 from core.exponentialnumber import ExponentialNumber
-from core.tasksetdata import TaskSetData, SweepParameter
-from core.taskdata import TaskData, TaskType
+from core.tasksetdata import TaskSetData
+from core.taskdata import TaskData
 from core.imagedata import ImageData
 
 from ui.native.taskset.tasksetbar import TaskSetBar
@@ -121,21 +121,21 @@ class TaskSet(QWidget):
         """
         tasks = list()
         match data.sweep_parameter:
-            case SweepParameter.none:
+            case TaskSetData.SweepParameter.none:
                 img = ImageData(data)
-                tasks.append(TaskData(inner=img, dtype=TaskType.Image, completed=False, index=0))
-            case SweepParameter.bias:
+                tasks.append(TaskData(inner=img, dtype=TaskData.TaskType.Image, completed=False, index=0))
+            case TaskSetData.SweepParameter.bias:
                 bias_range = np.arange(start=data.sweep_start.to_float(), stop=data.sweep_stop.to_float() + data.sweep_step.to_float(), step=data.sweep_step.to_float()) 
                 for i, bias in enumerate(bias_range):
                     img = ImageData(data)
                     img.bias = ExponentialNumber.from_float(bias)
-                    tasks.append(TaskData(inner=img, dtype=TaskType.Image, completed=False, index=i))
-            case SweepParameter.size:
+                    tasks.append(TaskData(inner=img, dtype=TaskData.TaskType.Image, completed=False, index=i))
+            case TaskSetData.SweepParameter.size:
                 size_range = np.arange(start=data.sweep_start.to_float(), stop=data.sweep_stop.to_float() + data.sweep_step.to_float(), step=data.sweep_step.to_float())
                 for i, size in enumerate(size_range):
                     img = ImageData(data)
                     img.size = ExponentialNumber.from_float(size)
-                    tasks.append(TaskData(inner=img, dtype=TaskType.Image, completed=False, index=i))
+                    tasks.append(TaskData(inner=img, dtype=TaskData.TaskType.Image, completed=False, index=i))
 
         return tasks
 
