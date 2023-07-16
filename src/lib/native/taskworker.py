@@ -74,18 +74,18 @@ class TaskWorker(QRunnable):
             Args:
                 data (Union[ImageData, SpecData]): The data containing the parameters to be set in the STM device.
         """
-        pos = Vector2(data.x_offset, data.y_offset)
+        pos = Vector2(data.x_offset.to_float(), data.y_offset.to_float())
 
         ## Bias
-        self.stm.set_bias(data.bias)
+        self.stm.set_bias(data.bias.to_float())
         ## Set point
-        self.stm.set_set_point(data.set_point)
+        self.stm.set_setpoint(data.set_point.to_float())
         ## Size
-        self.stm.set_scan_size(data.size)
+        self.stm.set_scan_size(data.size.to_float())
         ## Position
         self.stm.set_scan_pos(pos)
         ## Line time
-        self.stm.set_line_time(data.line_time)
+        self.stm.set_line_time(data.line_time.to_float())
         ## Lines per frame
         self.stm.set_lines_per_frace(data.lines_per_frame)
         ## Repetitions

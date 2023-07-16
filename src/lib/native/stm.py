@@ -110,6 +110,10 @@ class STM():
             result = self.send(cmd)
 
         return result
+    
+    def set_setpoint(self, setpoint: float):
+        cmd = f'SetSWParameter, STM Set Point, Value, {setpoint}\n'
+        return self.send(cmd)
 
     def set_scan_size(self, size: float):
         """
@@ -137,6 +141,14 @@ class STM():
         cmd = f'SetSWParameter, Scan Area Window, X Offset, {pos.x}'
         self.send(cmd)
         cmd = f'SetSWParameter, Scan Area Window, Y Offset, {pos.y}'
+        return self.send(cmd)
+
+    def set_line_time(self, line_time: float):
+        cmd = f'SetSWParameter, Scan Area Window, Line Time, {line_time}'
+        return self.send(cmd)
+    
+    def set_lines_per_frame(self, lines_per_frame: int):
+        cmd = f'SetSWParameter, Scan Area Window, Scan Settings, Lines Per Frame, {lines_per_frame}'
         return self.send(cmd)
 
     def set_scan_count(self, scan_count:int):
