@@ -13,9 +13,10 @@ from core.tasksetdata import TaskSetData, SweepParameter
 from core.taskdata import TaskData, TaskType
 from core.imagedata import ImageData
 
-from ui.native.tasksetbar import TaskSetBar
-from ui.native.tasksetinput import TaskSetInput
-from ui.native.tasksetinfo import TaskSetInfo
+from ui.native.taskset.tasksetbar import TaskSetBar
+from ui.native.taskset.tasksetinput import TaskSetInput
+from ui.native.taskset.tasksetinfo import TaskSetInfo
+from ui.native.taskset.tasksetstatus import TaskSetStatus
 
 class TaskSet(QWidget):
     """
@@ -45,7 +46,6 @@ class TaskSet(QWidget):
             _task_bar_hover_anim (QPropertyAnimation): Animation for the progress bar on hover.
             _info_anim (QParallelAnimationGroup): Animation group for expanding/collapsing the detailed information.
     """
-    Status = Enum('Status', ['Ready', 'Working', 'Finished', 'Error'])
 
     def __init__(self, name: str, data: TaskSetData, idx: int, dropFunc: Callable):
         """
@@ -58,7 +58,7 @@ class TaskSet(QWidget):
                 dropFunc (Callable): A function to call when the TaskSet is dropped.
         """
         super().__init__()
-        self.status = TaskSet.Status.Ready
+        self.status = TaskSetStatus.Ready
         self.index = idx
         self.data = data
         self.tasks: List[TaskData] = self.create_tasks(data)
@@ -164,7 +164,7 @@ class TaskSet(QWidget):
 
         self._name.elideText()
 
-    def setStatus(self, status: Status):
+    def setStatus(self, status: TaskSetStatus):
         """
             Set the status of the TaskSet.
 

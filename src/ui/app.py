@@ -9,7 +9,7 @@ from lib.native.taskworker import TaskWorker
 from ui.native.scanarea import ScanArea
 from ui.native.scientificspinbox import ScientificSpinBox
 from ui.native.tasksetlist import TaskSetList
-from ui.native.taskset import TaskSet
+from ui.native.taskset.tasksetstatus import TaskSetStatus
 from ui.native.togglebutton import ToggleButton
 
 
@@ -440,7 +440,7 @@ class Ui_MainWindow(QMainWindow):
         else:
             if len(self.task_set_list.task_sets) > 0:
                 for task_set in self.task_set_list.task_sets:
-                    if task_set.status is not TaskSet.Status.Finished:
+                    if task_set.status is not TaskSetStatus.Finished:
                         self.current_task_set = task_set
                         break
                 for (i, task_item) in enumerate(self.current_task_set._info.task_items):
@@ -472,7 +472,7 @@ class Ui_MainWindow(QMainWindow):
             if self.running:
                 if len(self.task_set_list.task_sets) > 0:
                     for task_set in self.task_set_list.task_sets:
-                        if task_set.status is not TaskSet.Status.Finished:
+                        if task_set.status is not TaskSetStatus.Finished:
                             self.current_task_set = task_set
                             break
                     for (i, task_item) in enumerate(self.current_task_set._info.task_items):
@@ -506,7 +506,7 @@ class Ui_MainWindow(QMainWindow):
                 current state of the task set and the todo list.
         """
         if self.current_task_set is not None:
-            self.current_task_set.setStatus(TaskSet.Status.Working)
+            self.current_task_set.setStatus(TaskSetStatus.Working)
             self.current_task = self.current_task_set.todo[0]
             worker = TaskWorker(self.current_task)
             worker.signals.finished.connect(self.restart_task_worker)
@@ -542,7 +542,7 @@ class Ui_MainWindow(QMainWindow):
         self.current_task_set.todo.pop(0)
         
         if len(self.current_task_set.todo) == 0:
-            self.current_task_set.setStatus(TaskSet.Status.Finished)
+            self.current_task_set.setStatus(TaskSetStatus.Finished)
             if self.current_task_set.index < len(self.task_set_list.task_sets) - 1:
                 self.current_task_set = self.task_set_list.task_sets[self.current_task_set.index + 1]                                   
                 for (i, task_item) in enumerate(self.current_task_set._info.task_items):

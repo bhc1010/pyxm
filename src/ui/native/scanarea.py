@@ -11,10 +11,27 @@ from ui.native.scantoolbar import ScanAreaToolBar
 from ui.native.togglebutton import ToggleButton
 
 class ScanArea(QGraphicsView):
+    """
+    QGraphicsView for displaying and interacting with the scan area.
+
+    This class provides a QGraphicsView that displays a scan area with a grid and allows interaction with the scan rectangle.
+    The scan rectangle can be moved and resized within the scan area, and signals are emitted when these actions occur.
+
+    Attributes:
+        scan_rect_moved (Signal): Signal emitted when the scan rectangle is moved.
+        scan_rect_resized (Signal): Signal emitted when the scan rectangle is resized.
+    """
     scan_rect_moved = Signal()
     scan_rect_resized = Signal()
     
     def __init__(self, *args, **kwargs):
+        """
+        Initialize the ScanArea QGraphicsView.
+
+        Args:
+            *args: Variable length argument list.
+            **kwargs: Arbitrary keyword arguments.
+        """
         super().__init__(*args, **kwargs)
 
         self._grid_size = 10
@@ -63,6 +80,11 @@ class ScanArea(QGraphicsView):
         self._current_view = self._scene.sceneRect()
 
     def draw_grid(self):
+        """
+        Draw grid lines in the scene.
+
+        This method draws grid lines within the scan area scene.
+        """
         pen = QPen()
         pen.setCosmetic(True)
         grid = np.linspace(-500, 500, 11)
@@ -75,11 +97,28 @@ class ScanArea(QGraphicsView):
             self._scene.addLine(-500., grid[tick], 500., grid[tick], pen)
 
     def resizeEvent(self, event):
+        """
+        Resize event handler for the QGraphicsView.
+
+        This method is called when the QGraphicsView is resized, and it adjusts the view to keep the current scene
+        in focus and maintain the aspect ratio.
+
+        Args:
+            event (QResizeEvent): The resize event.
+        """
         min_size = min(self.rect().width(), self.rect().height())
         self.resize(min_size, min_size)
         self.fitInView(self._current_view, Qt.KeepAspectRatio)
 
     def wheelEvent(self, event):
+        """
+        Wheel event handler for zooming.
+
+        This method is called when the mouse wheel is scrolled, and it handles zooming in and out of the scan area.
+
+        Args:
+            event (QWheelEvent): The wheel event.
+        """
         if event.angleDelta().y() > 0:
             self.zoom_factor = 1.1
             self._zoom += 1
@@ -101,9 +140,26 @@ class ScanArea(QGraphicsView):
         self.update_tool_bar()
 
     def showEvent(self, event):
+        """
+        Show event handler.
+
+        This method is called when the QGraphicsView is shown, and it updates the current view.
+
+        Args:
+            event (QShowEvent): The show event.
+        """
         self.updateCurrentView()
         
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
+        """
+        Mouse move event handler.
+
+        This method is called when the mouse is moved within the QGraphicsView, and it handles updating the tool bar
+        based on the mouse position.
+
+        Args:
+            event (QMouseEvent): The mouse move event.
+        """
         super().mouseMoveEvent(event)
         if Qt.MouseButton.LeftButton in event.buttons():
             if self.itemAt(event.pos()) == self.scan_rect:
@@ -112,28 +168,45 @@ class ScanArea(QGraphicsView):
                 self.update_tool_bar()
         
     def mouseReleaseEvent(self, event) -> None:
+        """
+        Mouse release event handler.
+
+        This method is called when a mouse button is released within the QGraphicsView.
+
+        Args:
+            event (QMouseEvent): The mouse release event.
+        """
         self.updateCurrentView()
         return super().mouseReleaseEvent(event)
 
-    # def enterEvent(self, event: QEnterEvent) -> None:
-    #     self.button.setVisible(True)
-    #     return super().enterEvent(event)
-    
-    # def leaveEvent(self, event: QEvent) -> None:
-    #     self.button.setVisible(False)
-    #     return super().leaveEvent(event)
-
     def toggleDragMode(self):
+        """
+        Toggle drag mode.
+
+        This method toggles the drag mode of the QGraphicsView between scrolling and no drag.
+        """
         if self.dragMode() == QGraphicsView.ScrollHandDrag:
             self.setDragMode(QGraphicsView.NoDrag)
         else:
             self.setDragMode(QGraphicsView.ScrollHandDrag)
     
     def updateCurrentView(self):
+        """
+        Update the current view.
+
+        This method updates the current view based on the visible area of the QGraphicsView.
+        """
         self._current_view = self.mapToScene(self.viewport().rect()).boundingRect()
         
     def update_tool_bar(self):
+        """
+        Update the position of the tool bar.
+
+        This method updates the position of the tool bar based on the mouse position.
+
+        Returns:
+            None
+        """
         padding = self.mapToScene(QPoint(10, 10))
         top_left = self.mapToScene(self.viewport().rect()).boundingRect().topLeft()
         self.button.setPos((top_left + padding)/2)
-        

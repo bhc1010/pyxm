@@ -4,7 +4,7 @@ from PySide6.QtGui import Qt
 from PySide6.QtWidgets import *
 
 from core.tasksetdata import TaskSetData
-from ui.native.taskset import TaskSet
+from ui.native.taskset.taskset import TaskSet
 
 class TaskSetList(QGroupBox):
     """

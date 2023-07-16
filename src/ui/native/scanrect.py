@@ -4,7 +4,30 @@ from PySide6.QtWidgets import *
 
 
 class ScanRectItem(QGraphicsRectItem):
+    """
+    Custom QGraphicsRectItem representing a resizable and movable rectangle in the QGraphicsView.
 
+    This class provides a custom QGraphicsRectItem with interactive resizing and movement capabilities.
+    The rectangle can be resized from its handles and moved within the scene. It emits signals when selected,
+    resized, and moved.
+
+    Attributes:
+        handleTopLeft (int): Identifier for the top-left resize handle.
+        handleTopMiddle (int): Identifier for the top-middle resize handle.
+        handleTopRight (int): Identifier for the top-right resize handle.
+        handleMiddleLeft (int): Identifier for the middle-left resize handle.
+        handleMiddleRight (int): Identifier for the middle-right resize handle.
+        handleBottomLeft (int): Identifier for the bottom-left resize handle.
+        handleBottomMiddle (int): Identifier for the bottom-middle resize handle.
+        handleBottomRight (int): Identifier for the bottom-right resize handle.
+        _handleSize (int): Size of the resize handles.
+        handleCursors (dict): Dictionary mapping resize handle identifiers to their corresponding cursor types.
+
+    Signals:
+        handleMoved: Signal emitted when the handle is moved.
+        shapeResized: Signal emitted when the shape is resized.
+        shapeMoved: Signal emitted when the shape is moved.
+    """
     handleTopLeft = 1
     handleTopMiddle = 2
     handleTopRight = 3
@@ -29,7 +52,12 @@ class ScanRectItem(QGraphicsRectItem):
 
     def __init__(self,  init_rect: QRectF, scene_limits: float, min_size: float):
         """
-        Initialize the shape.
+        Initialize the ScanRectItem.
+
+        Args:
+            init_rect (QRectF): Initial bounding rectangle for the ScanRectItem.
+            scene_limits (float): Limit of the scene area where the ScanRectItem can be moved.
+            min_size (float): Minimum size of the ScanRectItem.
         """
         super().__init__(init_rect)
         self.scene_limits = scene_limits  
@@ -51,6 +79,12 @@ class ScanRectItem(QGraphicsRectItem):
     def handleAt(self, point):
         """
         Returns the resize handle below the given point.
+
+        Args:
+            point (QPointF): The point where to check for a handle.
+
+        Returns:
+            int or None: The identifier of the handle below the given point, or None if no handle is found.
         """
         for k, v, in self.handles.items():
             if v.contains(point):
@@ -60,6 +94,9 @@ class ScanRectItem(QGraphicsRectItem):
     def hoverMoveEvent(self, moveEvent):
         """
         Executed when the mouse moves over the shape (NOT PRESSED).
+
+        Args:
+            moveEvent (QGraphicsSceneHoverEvent): The hover move event.
         """
         self.handle_color = QColor(255, 20, 10)
         if self.isSelected():
@@ -71,6 +108,9 @@ class ScanRectItem(QGraphicsRectItem):
     def hoverLeaveEvent(self, moveEvent):
         """
         Executed when the mouse leaves the shape (NOT PRESSED).
+
+        Args:
+            moveEvent (QGraphicsSceneHoverEvent): The hover leave event.
         """
         self.handle_color = QColor(0, 0, 0)
         self.setCursor(Qt.ArrowCursor)
@@ -79,6 +119,9 @@ class ScanRectItem(QGraphicsRectItem):
     def mousePressEvent(self, mouseEvent):
         """
         Executed when the mouse is pressed on the item.
+
+        Args:
+            mouseEvent (QGraphicsSceneMouseEvent): The mouse press event.
         """
         self.handleSelected = self.handleAt(mouseEvent.pos())
         if self.handleSelected:
@@ -89,6 +132,9 @@ class ScanRectItem(QGraphicsRectItem):
     def mouseMoveEvent(self, mouseEvent):
         """
         Executed when the mouse is being moved over the item while being pressed.
+
+        Args:
+            mouseEvent (QGraphicsSceneMouseEvent): The mouse move event.
         """
         if self.handleSelected is not None:
             self.interactiveResize(mouseEvent)
@@ -117,6 +163,9 @@ class ScanRectItem(QGraphicsRectItem):
     def mouseReleaseEvent(self, mouseEvent):
         """
         Executed when the mouse is released from the item.
+
+        Args:
+            mouseEvent (QGraphicsSceneMouseEvent): The mouse release event.
         """
         super().mouseReleaseEvent(mouseEvent)
         self.handleSelected = None
@@ -127,6 +176,9 @@ class ScanRectItem(QGraphicsRectItem):
     def boundingRect(self):
         """
         Returns the bounding rect of the shape (including the resize handles).
+
+        Returns:
+            QRectF: The bounding rect of the ScanRectItem.
         """
         o = self.handleSize + self.handleSpace
         return self.rect().adjusted(-o, -o, o, o)
@@ -134,12 +186,24 @@ class ScanRectItem(QGraphicsRectItem):
     def scene_inner_rect(self):
         """
         Returns the scene space bounding rect of the shape (excluding the resize handles).
+
+        Returns:
+            QRectF: The scene space bounding rect of the ScanRectItem.
         """
         o = self.handleSize + self.handleSpace
         return self.sceneBoundingRect().adjusted(o, o, -o, -o)
         
 
     def in_bounds(self, bbox) -> bool:
+        """
+        Check if the bounding box is within the scene limits.
+
+        Args:
+            bbox (QRectF): The bounding box to check.
+
+        Returns:
+            bool: True if the bounding box is within the scene limits, False otherwise.
+        """
         limit_lower = self.scene_limits[0]
         limit_upper = self.scene_limits[1]
         if bbox.left() < limit_lower or bbox.right() > limit_upper:
@@ -163,6 +227,9 @@ class ScanRectItem(QGraphicsRectItem):
     def interactiveResize(self, mouseEvent: QMouseEvent):
         """
         Perform shape interactive resize.
+
+        Args:
+            mouseEvent (QMouseEvent): The mouse event for the resize operation.
         """
         rect = self.rect()
         mousePos = mouseEvent.pos()
@@ -246,6 +313,9 @@ class ScanRectItem(QGraphicsRectItem):
     def shape(self):
         """
         Returns the shape of this item as a QPainterPath in local coordinates.
+
+        Returns:
+            QPainterPath: The shape of the ScanRectItem.
         """
         path = QPainterPath()
         path.addRect(self.rect())
@@ -257,6 +327,11 @@ class ScanRectItem(QGraphicsRectItem):
     def paint(self, painter, option, widget=None):
         """
         Paint the node in the graphic view.
+
+        Args:
+            painter (QPainter): The painter to use for painting.
+            option (QStyleOptionGraphicsItem): Style options for the item.
+            widget (QWidget): The widget to paint on.
         """
         pen = QPen(QColor(102, 157, 246), 3.0, Qt.SolidLine)
         pen.setCosmetic(True)

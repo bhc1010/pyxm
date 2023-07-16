@@ -4,7 +4,7 @@ from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 from typing import List
 
-from native.taskset import TaskSetData, SweepParameter
+from core.tasksetdata import TaskSetData, SweepParameter
 from core.taskdata import TaskData
 
 class TaskSetInfo(QWidget):
@@ -84,11 +84,20 @@ class TaskSetInfo(QWidget):
         """
         Event handler for painting the widget.
 
+        This method is called automatically when the widget needs to be repainted.
+        It is responsible for painting the background of the widget with rounded corners.
+
         Args:
-            e (QPaintEvent): The paint event.
+            e (QPaintEvent): The paint event object.
 
         Returns:
             None
+
+        Note:
+            - This method is called automatically by the Qt framework and should not be called directly.
+            - The method uses QPainter to draw the widget's background with rounded corners.
+              It sets the background color based on the `background` attribute and applies anti-aliasing
+              for smooth rendering.
         """
         painter = QtGui.QPainter(self)
         painter.setRenderHint(QtGui.QPainter.RenderHint.Antialiasing)

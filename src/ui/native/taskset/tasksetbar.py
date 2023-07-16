@@ -3,7 +3,7 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 
-from ui.native.taskset import TaskSet
+from ui.native.taskset.tasksetstatus import TaskSetStatus
 
 class TaskSetBar(QWidget):
     """
@@ -46,16 +46,16 @@ class TaskSetBar(QWidget):
             status (TaskSet.Status): The status of the TaskSet.
         """
         match (status):
-            case TaskSet.Status.Ready:
+            case TaskSetStatus.Ready:
                 self._background_color = QColor(235, 235, 235)
                 self._bar_color = QColor(200, 200, 200)
-            case TaskSet.Status.Working:
+            case TaskSetStatus.Working:
                 self._background_color = QColor(102, 157, 246)
                 self._bar_color = QColor(91, 141, 221)
-            case TaskSet.Status.Finished:
+            case TaskSetStatus.Finished:
                 self._background_color = QColor(66, 219, 99)
                 self._bar_color = self._background_color
-            case TaskSet.Status.Error:
+            case TaskSetStatus.Error:
                 self._background_color = QColor(255, 78, 78)
                 self._bar_color = QColor(255, 41, 41)
 
