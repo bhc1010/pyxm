@@ -23,7 +23,7 @@ The application provides an intuitive graphical user interface (GUI) and leverag
 
 The name "SAM 9000" pays homage to HAL 9000, the iconic sentient computer from the movie "2001: A Space Odyssey." Rest assured, SAM 9000 will not exhibit any of HAL's psychopathic tendencies – it's here to enhance your STM experiments!
 
-**Note: The SAM 9000 is currently in an experimental stage and may possibly exhibit psycopathic tendencies. The SAM 9000 has currently only been tested on the RHK PanScan Freedom system.**
+**⚠️ Note: The SAM 9000 is currently in an experimental stage and may possibly exhibit psycopathic tendencies. The SAM 9000 has currently only been tested on the RHK PanScan Freedom system. ⚠️**
 
 ## Features
 
