@@ -122,4 +122,5 @@ For any questions or inquiries, please feel free to contact the project maintain
 
 - Ben Campbell - [ben.campbell@unh.edu](mailto:ben.campbell@unh.edu)
 
-We hope you find SAM 9000 to be a valuable tool for your STM experiments! Happy scanning, and remember, "I'm sorry, I can't do that" is not a response you'll get from SAM 9000! 😄🚀
+We hope you find SAM 9000 to be a valuable tool for your STM experiments! Happy scanning, and remember, "I'm sorry, I can't do that" is not a response you'll get from SAM 9000! 😄🚀 [^1]
+[^1]: **Results may vary**
