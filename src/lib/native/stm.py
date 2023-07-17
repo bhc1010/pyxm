@@ -100,10 +100,8 @@ class STM():
             if data:
                 self.drop()
                 return False
-            else:
-                self.drop()
-                return True
         except socket.error:
+            self.drop()
             return True
     
     def start_procedure(self, procedure_name: str):
