@@ -64,7 +64,7 @@ cd sam9000
 ```console
 pip install -r requirements.txt
 ```
-4. Launch the STM application with
+4. Launch SAM 9000 with
 ```console
 python src/main.py
 ```
@@ -101,7 +101,7 @@ Example of `stm_commands.json` for the RHK PanScanFreedom via the R9:
 
 ## Contributing
 
-We welcome contributions to the STM application! If you find a bug, have an enhancement idea, or want to add new features, please follow these steps:
+We welcome contributions to SAM 9000! If you find a bug, have an enhancement idea, or want to add new features, please follow these steps:
 
 1. Fork the repository to your GitHub account.
 2. Create a new branch with a descriptive name for your changes.
