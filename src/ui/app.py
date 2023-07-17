@@ -15,9 +15,9 @@ from ui.native.togglebutton import ToggleButton
 
 class Ui_MainWindow(QMainWindow):
     """    
-        The main user interface class for the STM Automator application.
+        The main user interface class for the SAM 9000 application.
 
-        This class represents the main window of the STM Automator application. It provides a graphical user interface to
+        This class represents the main window of the SAM 9000 application. It provides a graphical user interface to
         control scanning tunneling microscope (STM) experiments. It provides functionality to configure scanning parameters, 
         spectroscopy parameters, and  sweep options, as well as manage and execute task sets in a multithreaded manner.
         The class sets up various components of the application, such as the toolbar, scan area, task list, and options frames. 
@@ -56,7 +56,7 @@ class Ui_MainWindow(QMainWindow):
 
         Note:
         - This class uses PySide6, a Python binding for the Qt framework, to create the graphical user interface.
-        - It defines the layout and behavior of the STM Automator application's main window.
+        - It defines the layout and behavior of the SAM 9000 application's main window.
         - The code relies on custom widgets and classes imported from various modules to build the user interface.
         - The "scan_area" and "options_frame" widgets are used to visualize the scan area and configure scan options, respectively.
         - The "task_set_list" displays a list of task sets that the user can add and execute.
@@ -80,7 +80,7 @@ class Ui_MainWindow(QMainWindow):
         super().__init__(*args, **kwargs)
 
         ## ------ Window Settings ------ ##
-        self.setWindowTitle("STM Automator")
+        self.setWindowTitle("SAM 9000")
         self.resize(1400, 800)
         self.centralwidget = QWidget(self)
 
