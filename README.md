@@ -18,7 +18,7 @@
 ## Introduction
 Congratulations on purchasing your brand new SAM 9000! 
 This application is an advanced Scanning Tunneling Microscope (STM) control and management system, enabling users to perform multiple imaging and spectroscopy tasks with ease and precision. 
-Imaging or Spectroscopy sets (called Task sets) can be queued up is the task set list and iterately preformed.
+Imaging or spectroscopy sets (task sets) can be queued up is the task set list and iterately preformed.
 The application provides an intuitive graphical user interface (GUI) and leverages the power of PySide6 library to ensure a smooth and responsive user experience.
 
 The name "SAM 9000" pays homage to HAL 9000, the iconic sentient computer from the movie "2001: A Space Odyssey." Rest assured, SAM 9000 will not exhibit any of HAL's psychopathic tendencies – it's here to enhance your STM experiments!
@@ -30,6 +30,7 @@ The name "SAM 9000" pays homage to HAL 9000, the iconic sentient computer from t
 - [x] Connect to an STM device using TCP/IP sockets
 - [x] Control STM parameters such as bias voltage, scan area, line time, and more, with easy-to-use input fields.
 - [x] Capture STM images with customizable scan size, position, and bias
+- [ ] Preview STM images inside scan area.
 - [ ] Perform scanning tunneling spectroscopy (STS) with adjustable start, stop, and step values, enabling detailed material characterization.
 - [ ] Customize STM commands to accomodate different commands and syntax used by an STM device
 - [x] Execute and create tasks simultaneously allowing for versatile experimentation and efficient workflow management.
