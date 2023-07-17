@@ -1,6 +1,6 @@
 # SAM 9000 (Scanning Tunneling Microscope AutoMator) 
 
-![alt text](https://github.com/bhc1010/stm_automator/blob/master/sam_9000.PNG)
+![SAM 9000 app](https://github.com/bhc1010/stm_automator/blob/master/sam_9000.PNG)
 
 ## Table of Contents
 - [Introduction](#introduction)
