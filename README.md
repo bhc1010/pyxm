@@ -30,6 +30,7 @@ The name "SAM 9000" pays homage to HAL 9000, the iconic sentient computer from t
 - [x] Connect to an STM device using TCP/IP sockets
 - [x] Control STM parameters such as bias voltage, scan area, line time, and more, with easy-to-use input fields.
 - [x] Capture STM images with customizable scan size, position, and bias
+- [ ] Preview STM images inside scan area.
 - [ ] Perform scanning tunneling spectroscopy (STS) with adjustable start, stop, and step values, enabling detailed material characterization.
 - [ ] Customize STM commands to accomodate different commands and syntax used by an STM device
 - [x] Execute and create tasks simultaneously allowing for versatile experimentation and efficient workflow management.
