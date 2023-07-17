@@ -71,7 +71,8 @@ pip install -r requirements.txt
 
 3. Run the SAM 9000 executable appropriate for your operating system.
 
-4. The application's GUI will appear, allowing
+4. The application's GUI will appear, allowing you to connect to the STM device and perform various tasks.
+
 
 ## Customization
 
