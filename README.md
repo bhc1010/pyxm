@@ -31,6 +31,7 @@ The name "SAM 9000" pays homage to HAL 9000, the iconic sentient computer from t
 - [x] Control STM parameters such as bias voltage, scan area, line time, and more, with easy-to-use input fields.
 - [x] Capture STM images with customizable scan size, position, and bias
 - [ ] Perform scanning tunneling spectroscopy (STS) with adjustable start, stop, and step values, enabling detailed material characterization.
+- [ ] Customize STM commands to accomodate different commands and syntax used by an STM device
 - [x] Execute and create tasks simultaneously allowing for versatile experimentation and efficient workflow management.
 - [x] Background task execution using worker threads ensures that the GUI remains responsive even during resource-intensive tasks.
 - [x] Custom GUI elements provide clear visualization and intuitive interaction, enhancing the user experience.
