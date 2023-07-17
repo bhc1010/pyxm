@@ -84,6 +84,26 @@ class STM():
         self.drop()
         return out
     
+    def peek(self) -> bool:
+        """
+            Checks if the socket buffer is empty.
+
+            Returns:
+                bool: True if the buffer is empty, False otherwise.
+        """
+        self.connect()
+        self.socket.setblocking(False)
+        try:
+            data = self.socket.recv(1)
+            if data:
+                self.drop()
+                return False
+            else:
+                self.drop()
+                return True
+        except socket.error:
+            return True
+    
     def start_procedure(self, procedure_name: str):
         """
         Starts an STM procedure by its name.
@@ -95,6 +115,10 @@ class STM():
             str: The result of the STM procedure.
         """
         cmd = f'StartProcedure, {procedure_name}\n'
+        buffer_empty = self.peek()
+        while not buffer_empty:
+            self.socket.recv(1)
+            buffer_empty = self.peek()
         print("Starting procedure")
         result = self.send(cmd)
         print(result)
