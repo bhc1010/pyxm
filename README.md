@@ -63,9 +63,10 @@ cd sam9000
 ```console
 pip install -r requirements.txt
 ```
-
-4. Launch the STM application by running main.py
-
+4. Launch the STM application with
+```console
+python src/main.py
+```
 5. The application's GUI will appear, allowing you to connect to the STM device and perform various tasks.
 
 ### Installation (as an executable)
