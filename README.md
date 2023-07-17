@@ -1,4 +1,4 @@
-# Scanning Tunneling Microscope (STM) AutoMator (SAM) 9000
+# SAM 9000 (Scanning Tunneling Microscope AutoMator) 
 
 ## Table of Contents
 - [Introduction](#introduction)
@@ -14,7 +14,7 @@
 
 ## Introduction
 
-Congradulations on purchasing your brand new STM AutoMator (SAM) 9000! This application is designed to control and manage an STM device, enabling users to perform various imaging and spectroscopy tasks. The application provides an intuitive graphical user interface (GUI) and leverages the PySide6 library to ensure a smooth and responsive user experience.
+Congradulations on purchasing your brand new SAM 9000! This application is designed to control and manage an STM device, enabling users to perform various imaging and spectroscopy tasks. The application provides an intuitive graphical user interface (GUI) and leverages the PySide6 library to ensure a smooth and responsive user experience.
 
 ## Features
 
