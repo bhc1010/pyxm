@@ -52,6 +52,7 @@ class STM():
         """
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.ip, self.port))
+        self.socket.setblocking(True)
 
     def drop(self):
         """
@@ -72,7 +73,7 @@ class STM():
             out_dtype: The response from the STM device with the specified data type.
         """
         self.connect()
-        time.sleep(0.01)
+        time.sleep(0.1)
         self.socket.send(msg.encode())
         result = self.socket.recv(STM._buffer_size).decode()
 
@@ -118,7 +119,6 @@ class STM():
         cmd = f'StartProcedure, {procedure_name}\n'
         buffer_empty = self.peek()
         while not buffer_empty:
-            self.socket.recv(1)
             buffer_empty = self.peek()
         print("Starting procedure")
         result = self.send(cmd)
