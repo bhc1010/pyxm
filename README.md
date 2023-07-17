@@ -27,14 +27,14 @@ The name "SAM 9000" pays homage to HAL 9000, the iconic sentient computer from t
 
 ## Features
 
-- Connect to an STM device using TCP/IP sockets, ensuring efficient communication and control.
-- Control STM parameters such as bias voltage, scan area, line time, and more, with easy-to-use input fields.
-- Capture STM images with customizable scan size, position, and bias, providing precise control over experimental parameters.
-- Perform scanning tunneling spectroscopy (STS) with adjustable start, stop, and step values, enabling detailed material characterization.
-- Execute tasks sequentially or simultaneously, allowing for versatile experimentation and efficient workflow management.
-- Background task execution using worker threads ensures that the GUI remains responsive even during resource-intensive tasks.
-- Custom GUI elements provide clear visualization and intuitive interaction, enhancing the user experience.
-- Stylish UI with custom styling using QDarkTheme, ensuring an aesthetic and enjoyable experience for users.
+- [x] Connect to an STM device using TCP/IP sockets
+- [x] Control STM parameters such as bias voltage, scan area, line time, and more, with easy-to-use input fields.
+- [x] Capture STM images with customizable scan size, position, and bias
+- [ ] Perform scanning tunneling spectroscopy (STS) with adjustable start, stop, and step values, enabling detailed material characterization.
+- [x] Execute and create tasks simultaneously allowing for versatile experimentation and efficient workflow management.
+- [x] Background task execution using worker threads ensures that the GUI remains responsive even during resource-intensive tasks.
+- [x] Custom GUI elements provide clear visualization and intuitive interaction, enhancing the user experience.
+- [x] Stylish UI with custom styling using pyqtdarktheme, ensuring an aesthetic and enjoyable experience for users.
 
 ## Getting Started
 
