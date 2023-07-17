@@ -87,7 +87,7 @@ class TaskWorker(QRunnable):
         ## Line time
         self.stm.set_line_time(data.line_time.to_float())
         ## Lines per frame
-        self.stm.set_lines_per_frace(data.lines_per_frame)
+        self.stm.set_lines_per_frame(data.lines_per_frame)
         ## Repetitions
         self.stm.set_scan_count(data.repetitions)
 
