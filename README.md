@@ -67,8 +67,6 @@ pip install -r requirements.txt
 ```console
 python src/main.py
 ```
-5. The application's GUI will appear, allowing you to connect to the STM device and perform various tasks.
-
 ### Installation (as an executable)
 
 1. Download the latest release of SAM 9000 from the [Releases](https://github.com/bhc1010/sam9000/releases) section.
@@ -76,9 +74,6 @@ python src/main.py
 2. Extract the downloaded archive to a location of your choice.
 
 3. Run the SAM 9000 executable appropriate for your operating system.
-
-4. The application's GUI will appear, allowing you to connect to the STM device and perform various tasks.
-
 
 ## Customization
 
