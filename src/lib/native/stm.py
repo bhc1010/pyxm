@@ -58,6 +58,7 @@ class STM():
         Closes the TCP/IP connection with the STM device.
         """
         self.socket.close()
+        self.socket = None
 
     def send(self, msg: str, out_dtype: type = str):
         """
