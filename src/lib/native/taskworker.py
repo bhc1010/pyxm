@@ -74,7 +74,7 @@ class TaskWorker(QRunnable):
             Args:
                 data (Union[ImageData, SpecData]): The data containing the parameters to be set in the STM device.
         """
-        pos = Vector2(data.x_offset.to_float(), data.y_offset.to_float())
+        pos = Vector2(data.x_offset.to_float(), -data.y_offset.to_float())
 
         ## Bias
         self.stm.set_bias(data.bias.to_float())

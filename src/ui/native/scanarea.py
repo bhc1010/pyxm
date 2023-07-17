@@ -24,7 +24,7 @@ class ScanArea(QGraphicsView):
     scan_rect_moved = Signal()
     scan_rect_resized = Signal()
     
-    def __init__(self, *args, **kwargs):
+    def __init__(self, size:float, *args, **kwargs):
         """
         Initialize the ScanArea QGraphicsView.
 
@@ -36,8 +36,9 @@ class ScanArea(QGraphicsView):
 
         self._grid_size = 10
         self._zoom = 0
+        self._size = size
         self._scene = QGraphicsScene()
-        self._scene.setSceneRect(QRect(-500., -500., 1000., 1000.))
+        self._scene.setSceneRect(QRect(-size/2, -size/2, size, size))
         self.setScene(self._scene)
         
         move = ToggleButton(objectName='arrows-alt', unchecked="#000", checked="#ff964f")
@@ -59,7 +60,7 @@ class ScanArea(QGraphicsView):
         self.button.setFlag(QGraphicsItem.ItemIgnoresTransformations)
         self.button.setZValue(1)
         # self.button.hide()
-        self.button.setPos(-490, -490)
+        self.button.setPos(-self._size/2 + 12.5, -self._size/2 + 12.5)
         
         self._scene.addItem(self.button)
 
@@ -73,7 +74,7 @@ class ScanArea(QGraphicsView):
 
         self.draw_grid()
         
-        self.scan_rect = ScanRectItem(init_rect = QRectF(-50, -50, 100, 100), scene_limits = [-500, 500], min_size=0.120)
+        self.scan_rect = ScanRectItem(init_rect = QRectF(-50, -50, 100, 100), scene_limits = [-self._size/2, self._size/2], min_size=0.120)
         self.scene().addItem(self.scan_rect)
 
         self.fitInView(self._scene.sceneRect(), Qt.KeepAspectRatio)
@@ -87,14 +88,15 @@ class ScanArea(QGraphicsView):
         """
         pen = QPen()
         pen.setCosmetic(True)
-        grid = np.linspace(-500, 500, 11)
+        half_size = self._size/2
+        grid = np.linspace(-half_size, half_size, 11)
         for tick in range(self._grid_size + 1):
             if tick == 0 or tick == round(self._grid_size / 2) or tick == self._grid_size:
                 pen.setColor(QColor(50,50,50))
             else:
                 pen.setColor(QColor(218, 220, 224))
-            self._scene.addLine(grid[tick], -500., grid[tick], 500., pen)
-            self._scene.addLine(-500., grid[tick], 500., grid[tick], pen)
+            self._scene.addLine(grid[tick], -half_size, grid[tick], half_size, pen)
+            self._scene.addLine(-half_size, grid[tick], half_size, grid[tick], pen)
 
     def resizeEvent(self, event):
         """

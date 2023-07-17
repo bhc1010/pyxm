@@ -132,7 +132,7 @@ class Ui_MainWindow(QMainWindow):
         self.scan_area_frame = QFrame(self.content, objectName="scan_area_frame")
         self.scan_area_frame.setMinimumWidth(500)
         
-        self.scan_area = ScanArea(self.scan_area_frame)
+        self.scan_area = ScanArea(size=2100.)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         sizePolicy.setHeightForWidth(True)
         self.scan_area.setSizePolicy(sizePolicy)

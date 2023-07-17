@@ -37,7 +37,7 @@ class ScanRectItem(QGraphicsRectItem):
     handleBottomMiddle = 7
     handleBottomRight = 8
     
-    _handleSize = 14
+    _handleSize = 25
 
     handleCursors = {
         handleTopLeft: Qt.SizeFDiagCursor,
