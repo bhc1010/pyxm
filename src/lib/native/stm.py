@@ -119,7 +119,7 @@ class STM():
         while not buffer_empty:
             buffer_empty = self.peek()
         print("Starting procedure")
-        result = self.send(cmd)
+        result = self.send(cmd)  ###TODO: Why isn't this blocked?
         print(result)
 
     def set_bias(self, bias: float):
