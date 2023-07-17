@@ -94,7 +94,7 @@ class STM():
         self.connect()
         self.socket.setblocking(False)
         try:
-            data = self.socket.recv(1)
+            data = self.socket.recv(1, socket.MSG_PEEK)
             if data:
                 self.drop()
                 return False
