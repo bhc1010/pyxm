@@ -1,4 +1,3 @@
-import time
 from typing import Union
 from PySide6.QtCore import *
 
@@ -19,7 +18,7 @@ class WorkerSignals(QObject):
             error: Signal emitted if an error occurs during the execution of the worker thread.
     """
 
-    finished = Signal()  # QtCore.Signal
+    finished = Signal()
     error = Signal(tuple)
 
 class TaskWorker(QRunnable):
@@ -36,8 +35,8 @@ class TaskWorker(QRunnable):
 
         Methods:
             run(): The main method of the worker thread that runs the task.
-            set_stm_params(data: Union[ImageData, SpecData]): Sets STM parameters for the given data.
-            start_procedure(): Starts the STM procedure based on the task type.
+            set_stm_params(data: Union[ImageData, SpecData]) -> None: Sets STM parameters for the given data.
+            start_procedure() -> str: Starts the STM procedure based on the task type.
     """
 
     def __init__(self, task: TaskData):
@@ -53,7 +52,7 @@ class TaskWorker(QRunnable):
         self.stm = STM()
 
     @Slot()
-    def run(self):
+    def run(self) -> None:
         """
             Runs the STM task.
 
@@ -62,41 +61,79 @@ class TaskWorker(QRunnable):
         print(f"Task started : {self.task.inner.bias}")
 
         self.set_stm_params(self.task.inner)
-        time.sleep(5)
-        # result = self.start_procedure()
+        result = self.start_procedure()
 
         self.signals.finished.emit()
 
-    def set_stm_params(self, data: Union[ImageData, SpecData]):
+    def set_stm_params(self, data: Union[ImageData, SpecData]) -> None:
         """
             Sets the STM parameters based on the given data.
 
             Args:
                 data (Union[ImageData, SpecData]): The data containing the parameters to be set in the STM device.
+
+            This method sets various parameters on the STM device to configure it for the specific STM task to be performed.
+            It takes an instance of ImageData or SpecData as input and extracts relevant information to configure the STM.
+
+            For ImageData:
+            - Bias: The bias voltage applied during scanning.
+            - Setpoint: The setpoint current for the feedback loop.
+            - Scan Size: The size of the scanning area in nanometers.
+            - Scan Position: The position (x, y) of the scanning area in nanometers.
+            - Line Time: The time taken to acquire one line of data.
+            - Lines Per Frame: The number of lines to be scanned to complete one frame.
+            - Repetitions: The number of times the scan is repeated.
+
+            For SpecData:
+            (Currently not implemented)
+
+            Note: This method does not execute the STM procedure; it only configures the STM device for the task.
+
+            Returns:
+                None
         """
         pos = Vector2(data.x_offset.to_float(), -data.y_offset.to_float())
 
-        ## Bias
+        # Set Bias
         self.stm.set_bias(data.bias.to_float())
-        ## Set point
+
+        # Set Setpoint
         self.stm.set_setpoint(data.set_point.to_float())
-        ## Size
+
+        # Set Scan Size
         self.stm.set_scan_size(data.size.to_float())
-        ## Position
+
+        # Set Scan Position
         self.stm.set_scan_pos(pos)
-        ## Line time
+
+        # Set Line Time
         self.stm.set_line_time(data.line_time.to_float())
-        ## Lines per frame
+
+        # Set Lines Per Frame
         self.stm.set_lines_per_frame(data.lines_per_frame)
-        ## Repetitions
+
+        # Set Repetitions
         self.stm.set_scan_count(data.repetitions)
 
-    def start_procedure(self):
+    def start_procedure(self) -> str:
         """
             Starts the STM procedure based on the task type.
 
             Returns:
                 str: The result of the STM procedure.
+
+            This method initiates the STM procedure based on the type of task specified in the 'task' attribute.
+            Currently, only the 'Image' task type is implemented.
+
+            For Image task:
+            The method starts the STM procedure for 'dI-dV Map Scan Speed'.
+
+            For other task types:
+            (Currently not implemented)
+
+            The result of the STM procedure, if available, is returned as a string.
+
+            Note: The method returns 'None' for task types other than 'Image' as they are not implemented yet.
         """
         match self.task.dtype:
             case TaskData.TaskType.Image:
