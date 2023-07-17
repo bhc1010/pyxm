@@ -33,24 +33,25 @@ Congradulations on purchasing your brand new SAM 9000! This application is desig
 
 To run the SAM 9000, you need the following installed on your system:
 
-- Python (>= 3.6)
-- PySide6 library (install via pip: `pip install PySide6`)
-- (Include any other prerequisites or system dependencies here)
+- Python (>= 3.11)
+- PySide6
+- numpy
+- pyqtdarktheme
 
 ### Installation
 
 1. Clone this repository to your local machine:
-
+```console
 git clone https://github.com/bhc1010/sam9000
-
+```
 2. Change to the project directory:
-
+```console
 cd sam9000
-
+```
 3. Install the required Python packages using pip:
-
+```console
 pip install -r requirements.txt
-
+```
 ## Usage
 
 1. Launch the STM application by running the following command:
