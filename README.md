@@ -1,6 +1,6 @@
-<p align="center">
+<h1 align="center">
 # Atom 
-</p>
+</h1>
 
 ![atom app](https://github.com/bhc1010/atom/blob/master/sam_9000.PNG?raw=true)
 
