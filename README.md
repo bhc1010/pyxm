@@ -1,74 +1,23 @@
-# SAM 9000 (Scanning Tunneling Microscope AutoMator) 
+<p align="center">
+# Atom 
+</p>
 
-![SAM 9000 app](https://github.com/bhc1010/sam9000/blob/master/sam_9000.PNG?raw=true)
+![atom app](https://github.com/bhc1010/atom/blob/master/sam_9000.PNG?raw=true)
 
-## Table of Contents
-- [Introduction](#introduction)
-- [Features](#features)
-- [Getting Started](#getting-started)
-  - [Prerequisites](#prerequisites)
-  - [Installation (from source)](#installation-from-source)
-  - [Installation (as an executable)](#installation-as-an-executable)
-- [Customization](#customization)
-- [Contributing](#contributing)
-- [License](#license)
-- [Contact](#contact)
-
-
-## Introduction
-Congratulations on purchasing your brand new SAM 9000! 
-This application is an advanced Scanning Tunneling Microscope (STM) control and management system, enabling users to perform multiple imaging and spectroscopy tasks with ease and precision. 
-Imaging or spectroscopy sets (task sets) can be queued up is the task set list and iterately preformed.
-The application provides an intuitive graphical user interface (GUI) and leverages the power of PySide6 library to ensure a smooth and responsive user experience.
-
-The name "SAM 9000" pays homage to HAL 9000, the iconic sentient computer from the movie "2001: A Space Odyssey." Rest assured, SAM 9000 will not exhibit any of HAL's psychopathic tendencies – it's here to enhance your STM experiments!
-
-**⚠️ Note: The SAM 9000 is currently in an experimental stage and may possibly exhibit psycopathic tendencies. The SAM 9000 has currently only been tested on the RHK PanScan Freedom system. ⚠️**
+Atom is a task management system for scanning tunneling microscopes written in Python 3.11, with the PySide6 GUI library.
+It aims to provide a simple and intuitive interface for users to queue up multiple sets of images and spectroscopy tasks to preform in a user-defined order.
+TCP/IP commands can be customized through a JSON file to fit the needs of any system.
+**⚠️ Note: atom is currently in an experimental stage and only been tested on the RHK PanScan Freedom system. ⚠️**
 
 ## Features
 
 - [x] Connect to an STM device using TCP/IP sockets
-- [x] Control STM parameters such as bias voltage, scan area, line time, and more, with easy-to-use input fields.
-- [x] Capture STM images with customizable scan size, position, and bias
+- [x] Fine-tuned control of STM parameters with easy-to-use input fields.
+- [x] Simultaneous execution and creation of tasks allowing for versatile experimentation and efficient workflow management.
 - [ ] Preview STM images inside scan area.
-- [ ] Perform scanning tunneling spectroscopy (STS) with adjustable start, stop, and step values, enabling detailed material characterization.
-- [ ] Customize STM commands to accomodate different commands and syntax used by an STM device
-- [x] Execute and create tasks simultaneously allowing for versatile experimentation and efficient workflow management.
-- [x] Background task execution using worker threads ensures that the GUI remains responsive even during resource-intensive tasks.
-- [x] Custom GUI elements provide clear visualization and intuitive interaction, enhancing the user experience.
-- [x] Stylish UI with custom styling using pyqtdarktheme, ensuring an aesthetic and enjoyable experience for users.
+- [ ] Customize TCP/IP commands to accomodate the syntax used by the users STM controller.
 
-## Getting Started
-
-### Prerequisites
-
-To run the SAM 9000 application, you need the following dependencies installed on your system:
-
-- Python (version 3.11 or higher)
-- PySide6
-- numpy
-- pyqtdarktheme
-
-### Installation (from source)
-
-1. Clone this repository to your local machine:
-```console
-git clone https://github.com/bhc1010/sam9000
-
-```
-2. Change to the project directory:
-```console
-cd sam9000
-```
-3. Install the required Python packages using pip:
-```console
-pip install -r requirements.txt
-```
-4. Launch SAM 9000 with
-```console
-python src/main.py
-```
-### Installation (as an executable)
+## Installation
 
 1. Download the latest release of SAM 9000 from the [Releases](https://github.com/bhc1010/sam9000/releases) section.
 
@@ -76,12 +25,26 @@ python src/main.py
 
 3. Run the SAM 9000 executable appropriate for your operating system.
 
-## Customization
+## Build from source
 
-You have the flexibility to customize the SAM 9000 application to meet the specific requirements of your STM device. Here are some ways to tailor the application to your needs:
+1. Clone the repository:
+```console
+git clone https://github.com/bhc1010/sam9000
+```
 
-- **Custom STM Commands**: To accommodate the specific commands and syntax used by your STM device, the application allows you to edit the `stm_commands.json` JSON file. In this JSON file, you can define the custom commands required to interact with your STM. The application will then read this file and use the provided commands when communicating with the STM device.
-  
+2. Install the required Python packages using pip:
+```console
+cd atom
+pip install -r requirements.txt
+```
+
+3. Run Atom:
+```console
+python src/main.py
+```
+
+## Customize STM Commands
+Commands required to interact with your STM can be specified in the 'stm_commands.json' file.
 Example of `stm_commands.json` for the RHK PanScanFreedom via the R9:
 
 ```json
@@ -94,6 +57,7 @@ Example of `stm_commands.json` for the RHK PanScanFreedom via the R9:
   "etc": "..."
 }
 ```
+
 **If running from source:**
 - Extend the functionality of the STM device by adding new methods to the `STM` class in `stm.py`.
 - Implement additional task types by extending the `TaskType` enum in `taskdata.py`.
@@ -101,7 +65,7 @@ Example of `stm_commands.json` for the RHK PanScanFreedom via the R9:
 
 ## Contributing
 
-We welcome contributions to SAM 9000! If you find a bug, have an enhancement idea, or want to add new features, please follow these steps:
+We welcome contributions to Atom! If you find a bug, have an enhancement idea, or want to add new features, please follow these steps:
 
 1. Fork the repository to your GitHub account.
 2. Create a new branch with a descriptive name for your changes.
@@ -118,6 +82,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 For any questions or inquiries, please feel free to contact the project maintainers:
 
 - Ben Campbell - [ben.campbell@unh.edu](mailto:ben.campbell@unh.edu)
-
-We hope you find SAM 9000 to be a valuable tool for your STM experiments! Happy scanning, and remember, "I'm sorry, I can't do that" is not a response you'll get from SAM 9000! 😄🚀 [^1]
-[^1]: **Results may vary**
