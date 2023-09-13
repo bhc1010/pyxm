@@ -7,23 +7,21 @@ Atom
 Atom is a task management system for scanning tunneling microscopes written in Python 3.11, with the PySide6 GUI library.
 It aims to provide a simple and intuitive interface for users to queue up multiple sets of images and spectroscopy tasks to preform in a user-defined order.
 TCP/IP commands can be customized through a JSON file to fit the needs of any system.
-**⚠️ Note: atom is currently in an experimental stage and only been tested on the RHK PanScan Freedom system. ⚠️**
+Atom is designed to communicate with an already existing STM controller and cannot control an STM directly.
+
+**⚠️ Note: Atom is currently in an experimental stage and only been tested on the RHK PanScan Freedom system. ⚠️**
 
 ## Features
 
 - [x] Connect to an STM device using TCP/IP sockets
 - [x] Fine-tuned control of STM parameters with easy-to-use input fields.
 - [x] Simultaneous execution and creation of tasks allowing for versatile experimentation and efficient workflow management.
-- [ ] Preview STM images inside scan area.
-- [ ] Customize TCP/IP commands to accomodate the syntax used by the users STM controller.
+- [ ] Preview images from a task inside scan area.
+- [ ] Save task sets for reuse or documentation.
+- [ ] Customize TCP/IP commands to accomodate syntax used by the users STM controller.
 
 ## Installation
-
-1. Download the latest release of SAM 9000 from the [Releases](https://github.com/bhc1010/sam9000/releases) section.
-
-2. Extract the downloaded archive to a location of your choice.
-
-3. Run the SAM 9000 executable appropriate for your operating system.
+The latest release of Atom can be downloaded from the [releases](https://github.com/bhc1010/atom/releases) section.
 
 ## Build from source
 
@@ -43,9 +41,10 @@ pip install -r requirements.txt
 python src/main.py
 ```
 
-## Customize STM Commands
-Commands required to interact with your STM can be specified in the 'stm_commands.json' file.
-Example of `stm_commands.json` for the RHK PanScanFreedom via the R9:
+## Custom STM commands
+Commands required to interact with your STM controller can be specified in the 'stm_commands.json' file.
+
+_Example of `stm_commands.json` for the RHK PanScanFreedom via the R9_
 
 ```json
 {
@@ -57,11 +56,6 @@ Example of `stm_commands.json` for the RHK PanScanFreedom via the R9:
   "etc": "..."
 }
 ```
-
-**If running from source:**
-- Extend the functionality of the STM device by adding new methods to the `STM` class in `stm.py`.
-- Implement additional task types by extending the `TaskType` enum in `taskdata.py`.
-- Customize the styling of the application by editing the `style.css` file in the `src/ui/style/` directory.
 
 ## Contributing
 
