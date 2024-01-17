@@ -2,3 +2,5 @@ PySide6
 pyqtdarktheme
 qimage2ndarray
 numpy
+spym
+xarray
