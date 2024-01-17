@@ -1,29 +1,37 @@
+import os, glob, json, spym
+import numpy as np
+import matplotlib.pyplot as plt
+import PIL
+from PIL.ImageQt import ImageQt
+from types import SimpleNamespace
+
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
+from PySide6.QtGui import QPixmap, QColor
+from qimage2ndarray import array2qimage
 
 from core.exponentialnumber import ExponentialNumber
 from core.tasksetdata import TaskSetData
 
-from lib.native.taskworker import TaskWorker
+from lib.stm import STM
+from lib.taskworker import TaskWorker
 
-from ui.native.scanarea import ScanArea
-from ui.native.scientificspinbox import ScientificSpinBox
-from ui.native.tasksetlist import TaskSetList
-from ui.native.taskset.tasksetstatus import TaskSetStatus
-from ui.native.togglebutton import ToggleButton
-
+from ui.widget.scanarea.scanarea import ScanArea
+from ui.widget.scanarea.rectpreview import RectPreview
+from ui.widget.scientificspinbox import ScientificSpinBox
+from ui.widget.tasksetlist import TaskSetList
+from ui.widget.taskset.tasksetstatus import TaskSetStatus
+from ui.widget.togglebutton import ToggleButton
 
 class Ui_MainWindow(QMainWindow):
     """    
-        The main user interface class for the SAM 9000 application.
-
-        This class represents the main window of the SAM 9000 application. It provides a graphical user interface to
-        control scanning tunneling microscope (STM) experiments. It provides functionality to configure scanning parameters, 
+        This class represents the main window of pyxm. It provides a graphical user interface to
+        control scanning tunneling microscope experiments. It provides functionality to configure scanning parameters, 
         spectroscopy parameters, and  sweep options, as well as manage and execute task sets in a multithreaded manner.
         The class sets up various components of the application, such as the toolbar, scan area, task list, and options frames. 
         It also handles event connections for different UI elements and manages the execution of tasks.
 
-        The class inherits from QMainWindow, a top-level application window class in Qt. It serves as the main container
+        The class inherits from QMainWindow, a top-level window class in Qt. It serves as the main container
         for the UI elements and layouts.
 
         Attributes:
@@ -52,11 +60,10 @@ class Ui_MainWindow(QMainWindow):
             set_sweep_units: Sets the units for sweep-related input fields based on the selected sweep parameter.
             set_sweep_vals: Sets the sweep-related input fields' values based on the selected sweep parameter.
             update_sweep_params: Updates the sweep-related parameters based on the selected sweep parameter.
-            set_enable_spectroscopy: Enables or disables spectroscopy-related input fields based on the selected spectroscopy mode.
 
         Note:
         - This class uses PySide6, a Python binding for the Qt framework, to create the graphical user interface.
-        - It defines the layout and behavior of the SAM 9000 application's main window.
+        - It defines the layout and behavior of pyxm's main window.
         - The code relies on custom widgets and classes imported from various modules to build the user interface.
         - The "scan_area" and "options_frame" widgets are used to visualize the scan area and configure scan options, respectively.
         - The "task_set_list" displays a list of task sets that the user can add and execute.
@@ -67,7 +74,6 @@ class Ui_MainWindow(QMainWindow):
         - The "update_time_to_finish" and "update_total_images" methods calculate and display task-related statistics.
         - The "set_sweep_enabled," "set_sweep_units," and "set_sweep_vals" methods manage sweep-related input fields.
         - The "update_sweep_params" method updates sweep-related input fields based on the selected sweep parameter.
-        - The "set_enable_spectroscopy" method enables or disables spectroscopy-related input fields based on the selected mode.
     """
     def __init__(self, *args, **kwargs):
         """
@@ -80,14 +86,20 @@ class Ui_MainWindow(QMainWindow):
         super().__init__(*args, **kwargs)
 
         ## ------ Window Settings ------ ##
-        self.setWindowTitle("SAM 9000")
+        self.setWindowTitle("pyxm")
         self.resize(1400, 800)
         self.centralwidget = QWidget(self)
+
+        ## ------- Global STM object --- ##
+        with open('src/stm_commands.json') as f:
+            commands = json.load(f, object_hook=lambda d: SimpleNamespace(**d))
+        self.stm = STM(commands=commands)
 
         ## ------- Task threadpool ----- ##
         self.running = False
         self.paused = False
-        self.threadpool = QThreadPool()
+        self.stopped = False
+        self.threadpool = QThreadPool.globalInstance()
         print("Multithreading with maximum %d threads" % self.threadpool.maxThreadCount())
 
         ## ------ Toolbar ------ ##
@@ -98,7 +110,7 @@ class Ui_MainWindow(QMainWindow):
         self.left_space = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.play = ToggleButton(objectName='play')
         self.pause = ToggleButton(objectName='pause')
-        self.stop = ToggleButton(objectName='stop')
+        self.stop = ToggleButton(objectName='stop', toggle=False)
         self.right_space = QSpacerItem(0, 0, QSizePolicy.Expanding, QSizePolicy.Minimum)
         self.settings = ToggleButton(objectName='cog')
 
@@ -116,14 +128,11 @@ class Ui_MainWindow(QMainWindow):
         self.toolbar_layout = QHBoxLayout(self.toolbar)
         self.toolbar_layout.setSpacing(0)
         self.toolbar_layout.setContentsMargins(0, 0, 0, 0)
-        self.toolbar_layout.addWidget(self.menu)
+        # self.toolbar_layout.addWidget(self.menu)
         self.toolbar_layout.addItem(self.left_space)
         self.toolbar_layout.addWidget(button_group)
-        # self.toolbar_layout.addWidget(self.play)
-        # self.toolbar_layout.addWidget(self.pause)
-        # self.toolbar_layout.addWidget(self.stop)
         self.toolbar_layout.addItem(self.right_space)
-        self.toolbar_layout.addWidget(self.settings)
+        # self.toolbar_layout.addWidget(self.settings)
 
         ## ---------- Content ----------##
         self.content = QFrame(self.centralwidget, objectName="content_frame")
@@ -136,24 +145,38 @@ class Ui_MainWindow(QMainWindow):
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Minimum)
         sizePolicy.setHeightForWidth(True)
         self.scan_area.setSizePolicy(sizePolicy)
+        self._rect_previews = list()
 
         self.scan_area_layout = QVBoxLayout(self.scan_area_frame)
         self.scan_area_layout.setContentsMargins(0, 7, 0, 0)
-        # self.scan_area_layout.addStretch()
         self.scan_area_layout.addWidget(self.scan_area)
-        # self.scan_area_layout.addStretch()
 
         ## Options
         self.options_frame = QFrame(self.content, objectName="options_frame")
         self.options_frame.setMinimumWidth(350)
         self.options_frame.setMaximumWidth(375)
 
+        # Task Mode
+        self.task_mode_box = QGroupBox()
+        self.task_mode_box.setFlat(True)
+        self.task_mode_box.setAlignment(Qt.AlignmentFlag.AlignCenter)
+
+        self.task_mode_label = QLabel("Task Mode")
+        self.task_mode = QComboBox()
+        self.task_mode.addItems(['Image', 'Spectroscopy with image'])
+        self.task_mode.setCurrentIndex(0)
+
+        self.task_mode_layout = QGridLayout()
+        self.task_mode_layout.addWidget(self.task_mode_label, 0, 0, 1, 1)
+        self.task_mode_layout.addWidget(self.task_mode, 0, 1, 1, 1)
+            
+        self.task_mode_box.setLayout(self.task_mode_layout)
+
         # Scan Options
         self.scan_options = QGroupBox("Image Parameters")
         self.scan_options.setFlat(True)
-        self.scan_options.setAlignment(Qt.AlignmentFlag.AlignCenter)
         
-        self.lines_per_frame_label = QLabel("Lines per frame")
+        self.lines_per_frame_label = QLabel("Lines Per Frame")
         self.lines_per_frame = QComboBox()
         self.lines_per_frame.addItems([f'{2**n}' for n in range(3, 13)])
         self.lines_per_frame.setCurrentIndex(5)
@@ -165,7 +188,7 @@ class Ui_MainWindow(QMainWindow):
         self.bias.setValue(ExponentialNumber(300, -3))
         self.bias.setUnits('V')
         
-        self.set_point_label = QLabel("Set point current")
+        self.set_point_label = QLabel("Set Point")
         self.set_point = ScientificSpinBox()
         self.set_point.setBounds(lower=ExponentialNumber(-500, -9), upper=ExponentialNumber(500, -9))
         self.set_point.setValue(ExponentialNumber(100, -12))
@@ -177,26 +200,26 @@ class Ui_MainWindow(QMainWindow):
         self.scan_size.setValue(ExponentialNumber(100, -9))
         self.scan_size.setUnits('m')
 
-        self.x_offset_label = QLabel("X offset")
+        self.x_offset_label = QLabel("X Offset")
         self.x_offset = ScientificSpinBox()
         self.x_offset.setBounds(lower=ExponentialNumber(-1.5, -6), upper=ExponentialNumber(1.5, -6))
         self.x_offset.setValue(ExponentialNumber(0, -9))
         self.x_offset.setUnits('m')
 
-        self.y_offset_label = QLabel("Y offset")
+        self.y_offset_label = QLabel("Y Offset")
         self.y_offset = ScientificSpinBox()
         self.y_offset.setBounds(lower=ExponentialNumber(-1.5, -6), upper=ExponentialNumber(1.5, -6))
         self.y_offset.setValue(ExponentialNumber(0, -9))
         self.y_offset.setUnits('m')
 
-        self.scan_speed_label = QLabel("Scan speed")
+        self.scan_speed_label = QLabel("Scan Speed")
         self.scan_speed = ScientificSpinBox()
         self.scan_speed.setBounds(lower=ExponentialNumber(2.5, -12), upper=ExponentialNumber(1, -6))
         self.scan_speed.setValue(ExponentialNumber(100, -9))
         self.scan_speed.setUnits('m/s')
         self.scan_speed.setEnabled(False)
 
-        self.line_time_label = QLabel("Line time")
+        self.line_time_label = QLabel("Line Time")
         self.line_time = ScientificSpinBox()
         self.line_time.setBounds(lower=ExponentialNumber(2.5, -12), upper=ExponentialNumber(1000, 0))
         self.line_time.setValue(ExponentialNumber(1, 0))
@@ -218,8 +241,6 @@ class Ui_MainWindow(QMainWindow):
                              (self.repetitions_label, self.repetitions)]
         
         self.scan_options_layout = QGridLayout()
-        self.scan_options_layout.setSizeConstraint(QLayout.SetDefaultConstraint)
-        self.scan_options_layout.setHorizontalSpacing(6)
         for (i, (label, widget)) in enumerate(img_param_widgets):    
             self.scan_options_layout.addWidget(label, i, 0, 1, 1)
             self.scan_options_layout.addWidget(widget, i, 1, 1, 1)
@@ -229,47 +250,107 @@ class Ui_MainWindow(QMainWindow):
         # Spec Parameters
         self.sts_options = QGroupBox("Spectroscopy Parameters", self.options_frame)
         self.sts_options.setFlat(True)
+        self.sts_options.setHidden(True)
 
-        self.sts_mode_label = QLabel("Spectroscopy mode", self.sts_options)
+        self.sts_mode_label = QLabel("Spectroscopy Mode", self.sts_options)
         self.sts_mode = QComboBox(self.sts_options)
-        self.sts_mode.addItems(["None", "Point", "Line", "Region", "All", "Pixel"])
+        self.sts_mode.addItems(["Line"])
 
-        self.sts_initial_voltage_label = QLabel("Initial voltage", self.sts_options)
-        self.sts_initial_voltage = ScientificSpinBox()
-        self.sts_initial_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
-        self.sts_initial_voltage.setValue(ExponentialNumber(-1, 0))
-        self.sts_initial_voltage.setUnits('V')
+        self.sts_initial_value_label = QLabel("Initial Value", self.sts_options)
+        self.sts_initial_value = ScientificSpinBox()
+        self.sts_initial_value.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.sts_initial_value.setValue(ExponentialNumber(-300, -3))
+        self.sts_initial_value.setUnits('V')
 
-        self.sts_final_voltage_label = QLabel("Final voltage", self.sts_options)
-        self.sts_final_voltage = ScientificSpinBox()
-        self.sts_final_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
-        self.sts_final_voltage.setValue(ExponentialNumber(1, 0))
-        self.sts_final_voltage.setUnits('V')
+        self.sts_final_value_label = QLabel("Final Value", self.sts_options)
+        self.sts_final_value = ScientificSpinBox()
+        self.sts_final_value.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.sts_final_value.setValue(ExponentialNumber(300, -3))
+        self.sts_final_value.setUnits('V')
 
-        self.sts_step_voltage_label = QLabel("Voltage increment", self.sts_options)
-        self.sts_step_voltage = ScientificSpinBox()
-        self.sts_step_voltage.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
-        self.sts_step_voltage.setValue(ExponentialNumber(25, -3))
-        self.sts_step_voltage.setUnits('V')
+        self.sts_step_label = QLabel("Output Increment", self.sts_options)
+        self.sts_step = ScientificSpinBox()
+        self.sts_step.setBounds(lower=ExponentialNumber(-5, 0), upper=ExponentialNumber(5, 0))
+        self.sts_step.setValue(ExponentialNumber(25, -3))
+        self.sts_step.setUnits('V')
         
-        self.sts_delay_time_label = QLabel("Delay Time", self.sts_options)
-        self.sts_delay_time = ScientificSpinBox()
-        self.sts_delay_time.setBounds(lower=ExponentialNumber(5, -3), upper=ExponentialNumber(1, 0))
-        self.sts_delay_time.setValue(ExponentialNumber(10, -3))
-        self.sts_delay_time.setUnits('s')
+        self.sts_points_per_spectrum_label = QLabel("Points Per Spectrum", self.sts_options)
+        self.sts_points_per_spectrum = QSpinBox()
+        self.sts_points_per_spectrum.setButtonSymbols(QAbstractSpinBox.ButtonSymbols.NoButtons)
+        self.sts_points_per_spectrum.setEnabled(False)
+
+        self.sts_setup_rate_label = QLabel("Setup Rate", self.sts_options)
+        self.sts_setup_rate = ScientificSpinBox()
+        self.sts_setup_rate.setBounds(lower=ExponentialNumber(100, -12), upper=ExponentialNumber(1, 3))
+        self.sts_setup_rate.setValue(ExponentialNumber(10, 0))
+        self.sts_setup_rate.setUnits('V')
+
+        self.sts_sample_delay_label = QLabel("Pre-sample Delay", self.sts_options)
+        self.sts_sample_delay = ScientificSpinBox()
+        self.sts_sample_delay.setBounds(lower=ExponentialNumber(5, -3), upper=ExponentialNumber(1, 0))
+        self.sts_sample_delay.setValue(ExponentialNumber(20, -3))
+        self.sts_sample_delay.setUnits('s')
+
+        self.sts_sample_time_label = QLabel("Sampling Time", self.sts_options)
+        self.sts_sample_time = ScientificSpinBox()
+        self.sts_sample_time.setBounds(lower=ExponentialNumber(100, -6), upper=ExponentialNumber(1, 3))
+        self.sts_sample_time.setValue(ExponentialNumber(30, -3))
+        self.sts_sample_time.setUnits('s')
+
+        self.sts_time_per_spectrum_label = QLabel("Time Per Spectrum", self.sts_options)
+        self.sts_time_per_spectrum = ScientificSpinBox()
+        self.sts_time_per_spectrum.setBounds(lower=ExponentialNumber(100, -6), upper=ExponentialNumber(1, 3))
+        self.sts_time_per_spectrum.setValue(ExponentialNumber(10, -3))
+        self.sts_time_per_spectrum.setUnits('s')
+        self.sts_time_per_spectrum.setEnabled(False)
+
+        self.sts_spectra_to_aquire_label = QLabel("Spectra To Aquire", self.sts_options)
+        self.sts_spectra_to_aquire = QSpinBox()
         
+        self.sts_stablilze_between_spectra = QCheckBox('Stabilize Between Spectra')
+        self.sts_stablilze_between_spectra.setChecked(True)
+
+        self.sts_alternate_scan_direction = QCheckBox('Alternate Scan Direction')
+        self.sts_alternate_scan_direction.setChecked(True)
+
+        self.sts_stabilization_delay_label = QLabel("Stabilization Delay", self.sts_options)
+        self.sts_stabilization_delay = ScientificSpinBox()
+        self.sts_stabilization_delay.setBounds(lower=ExponentialNumber(100, -6), upper=ExponentialNumber(1, 3))
+        self.sts_stabilization_delay.setValue(ExponentialNumber(300, -3))
+        self.sts_stabilization_delay.setUnits('s')
+
+        self.sts_sweep_rate_label = QLabel("Sweep Rate", self.sts_options)
+        self.sts_sweep_rate = ScientificSpinBox()
+        self.sts_sweep_rate.setBounds(lower=ExponentialNumber(100, -6), upper=ExponentialNumber(1, 3))
+        self.sts_sweep_rate.setValue(ExponentialNumber(5, 0))
+        self.sts_sweep_rate.setUnits('V')
+
+        self.sts_pre_spectrum_delay_label = QLabel("Pre-Spectrum Delay", self.sts_options)
+        self.sts_pre_spectrum_delay = ScientificSpinBox()
+        self.sts_pre_spectrum_delay.setBounds(lower=ExponentialNumber(0, 0), upper=ExponentialNumber(1, 3))
+        self.sts_pre_spectrum_delay.setValue(ExponentialNumber(20, -3))
+        self.sts_pre_spectrum_delay.setUnits('s')
+
         spec_param_widgets = [(self.sts_mode_label, self.sts_mode),
-                             (self.sts_initial_voltage_label, self.sts_initial_voltage),
-                             (self.sts_final_voltage_label, self.sts_final_voltage),
-                             (self.sts_step_voltage_label, self.sts_step_voltage),
-                             (self.sts_delay_time_label, self.sts_delay_time)]
+                             (self.sts_initial_value_label, self.sts_initial_value),
+                             (self.sts_final_value_label, self.sts_final_value),
+                             (self.sts_step_label, self.sts_step),
+                             (self.sts_points_per_spectrum_label, self.sts_points_per_spectrum),
+                             (self.sts_setup_rate_label, self.sts_setup_rate),
+                             (self.sts_sample_delay_label, self.sts_sample_delay),
+                             (self.sts_sample_time_label, self.sts_sample_time),
+                             (self.sts_time_per_spectrum_label, self.sts_time_per_spectrum),
+                             (self.sts_spectra_to_aquire_label, self.sts_spectra_to_aquire),
+                             (self.sts_stablilze_between_spectra, self.sts_alternate_scan_direction),
+                             (self.sts_stabilization_delay_label, self.sts_stabilization_delay),
+                             (self.sts_sweep_rate_label, self.sts_sweep_rate),
+                             (self.sts_pre_spectrum_delay_label, self.sts_pre_spectrum_delay)]
         
         self.sts_options_layout = QGridLayout()
         for (i, (label, widget)) in enumerate(spec_param_widgets):    
             self.sts_options_layout.addWidget(label, i, 0, 1, 1)
             self.sts_options_layout.addWidget(widget, i, 1, 1, 1)
         self.sts_options.setLayout(self.sts_options_layout)
-        self.set_enable_spectroscopy()
 
         # Sweep Options
         self.sweep_options = QGroupBox("Sweep Options", self.options_frame)
@@ -278,7 +359,7 @@ class Ui_MainWindow(QMainWindow):
         self.sweep_parameter_label = QLabel("Sweep parameter")
         self.sweep_parameter = QComboBox()
         self.sweep_parameter.addItems(["None", "Bias", "Size"])#, "Set point current", "Size", "X offset", "Y offset"])
-        self.sweep_parameter.setCurrentText("Bias")
+        self.sweep_parameter.setCurrentText("None")
 
         self.sweep_start_label = QLabel("Initial value")
         self.sweep_start = ScientificSpinBox()
@@ -324,6 +405,7 @@ class Ui_MainWindow(QMainWindow):
         self.options_frame_layout = QVBoxLayout(self.options_frame)
         self.options_frame_layout.setSpacing(2)
         self.options_frame_layout.setContentsMargins(0, 0, 0, 0)
+        self.options_frame_layout.addWidget(self.task_mode_box)
         self.options_frame_layout.addWidget(self.scan_options)
         self.options_frame_layout.addWidget(self.sts_options)
         self.options_frame_layout.addWidget(self.sweep_options)
@@ -354,13 +436,13 @@ class Ui_MainWindow(QMainWindow):
 
         self.setCentralWidget(self.centralwidget)
         self.setup_events()
+        self.update_sweep_params()
 
     def setup_events(self):
         """
             Set up event connections for various UI elements.
 
-            This method establishes connections between different UI elements and their corresponding event-handling
-            methods. It ensures that user actions trigger appropriate actions within the application.
+            This method establishes connections between different UI elements and their corresponding event-handling methods.
 
             The following event connections are established:
             - The "Add Task Set" button and the "Return" key press in the task set name field are connected to the
@@ -390,6 +472,13 @@ class Ui_MainWindow(QMainWindow):
         self.scan_area.scan_rect_moved.connect(self.scan_rect_moved)
         self.scan_size.value_changed.connect(self.update_scan_size)
         
+        # Task Mode
+        self.task_mode.currentIndexChanged.connect(self.task_mode_changed)
+
+        # Image params
+        self.bias.value_changed.connect(self.bias_changed)
+        self.set_point.value_changed.connect(self.set_point_changed)
+
         # Scan position
         self.x_offset.value_changed.connect(self.update_scan_position)
         self.y_offset.value_changed.connect(self.update_scan_position)
@@ -397,6 +486,7 @@ class Ui_MainWindow(QMainWindow):
         # Time to finish
         self.lines_per_frame.currentIndexChanged.connect(self.update_time_to_finish)
         self.line_time.value_changed.connect(self.update_time_to_finish)
+        self.sweep_parameter.currentIndexChanged.connect(self.update_time_to_finish)
         self.sweep_start.value_changed.connect(self.update_time_to_finish)
         self.sweep_stop.value_changed.connect(self.update_time_to_finish)
         self.sweep_step.value_changed.connect(self.update_time_to_finish)
@@ -408,15 +498,13 @@ class Ui_MainWindow(QMainWindow):
         self.sweep_step.value_changed.connect(self.update_total_images)
         self.repetitions.valueChanged.connect(self.update_total_images)
 
-        # Spectroscopy
-        self.sts_mode.currentIndexChanged.connect(self.set_enable_spectroscopy)
-
         # Sweep param
         self.sweep_parameter.currentIndexChanged.connect(self.update_sweep_params)
 
         # Toolbar
         self.play.clicked.connect(self.play_clicked)
         self.pause.clicked.connect(self.pause_clicked)
+        self.stop.clicked.connect(self.stop_clicked)
 
     def play_clicked(self):
         """
@@ -467,9 +555,11 @@ class Ui_MainWindow(QMainWindow):
         """
         if self.pause.isChecked():
             self.paused = True
+            self.stm.paused = True
         else:
             self.paused = False
-            if self.running:
+            self.stm.paused = False
+            if not self.running:
                 if len(self.task_set_list.task_sets) > 0:
                     for task_set in self.task_set_list.task_sets:
                         if task_set.status is not TaskSetStatus.Finished:
@@ -484,7 +574,11 @@ class Ui_MainWindow(QMainWindow):
                 else:
                     self.current_task_set = None
                 self.start_task()
-                
+
+    def stop_clicked(self):
+        self.stopped = True
+        self.stm.stopped = True
+       
     def start_task(self):
         """
             Start the execution of the current task set.
@@ -508,16 +602,17 @@ class Ui_MainWindow(QMainWindow):
         if self.current_task_set is not None:
             self.current_task_set.setStatus(TaskSetStatus.Working)
             self.current_task = self.current_task_set.todo[0]
-            worker = TaskWorker(self.current_task)
+            worker = TaskWorker(self.current_task, self.stm)
             worker.signals.finished.connect(self.restart_task_worker)
             self.threadpool.start(worker)
             self.running = True
+            self.paint_current_task_rect()
         else:
             self.running = False
             self.play.setChecked(False)
             self.play.toggle()
             
-    def restart_task_worker(self):
+    def restart_task_worker(self, save_path: str):
         """
             Handle the completion of a task and select the next task or task set for execution.
 
@@ -536,11 +631,48 @@ class Ui_MainWindow(QMainWindow):
                 - The method uses the `threadpool` attribute of the class to manage the execution of tasks using separate
                 worker threads.
         """
-        self.current_task.completed = True
-        self.current_task_set._info.task_items[self.current_task.index].setEnabled(False)
+        if not self.stopped:
+            self.current_task.completed = True
+            self.current_task_set._info.task_items[self.current_task.index].setEnabled(False)
+            self.current_task_set.todo.pop(0)   
         self.current_task_set.update_task_bar()
-        self.current_task_set.todo.pop(0)
+        self.remove_current_task_rect()
         
+        # Image preview
+        try:
+            files = glob.glob(os.path.join(save_path, '*.sm4'))
+            fname = max(files, key=os.path.getctime)
+            sm4 = spym.load(fname)
+            if 'Current' not in sm4.data_vars and 'Topography_Forward' in sm4.data_vars:
+                tf = sm4.Topography_Forward
+                tf.spym.align()
+                tf.spym.plane()
+                tf.spym.align()
+                nd_img = tf.data
+
+                size = self.current_task.inner.size.to_float() * 1e9 / self.scan_area._size
+                x = self.current_task.inner.x_offset.to_float() * 1e9 - (size/2)
+                y = self.current_task.inner.y_offset.to_float() * 1e9 - (size/2)
+
+                fig = plt.figure(figsize=(20, 20))
+                ax = plt.Axes(fig, [0., 0., 1., 1.])
+                ax.set_axis_off()
+                fig.add_axes(ax)
+                ax.imshow(nd_img, cmap='afmhot')
+                fig.canvas.draw()
+
+                image = PIL.Image.frombytes('RGB', fig.canvas.get_width_height(), fig.canvas.tostring_rgb())
+                image = QPixmap(ImageQt(image))
+                # image = image.scaled(size, size, Qt.AspectRatioMode.KeepAspectRatio, Qt.FastTransformation)
+                image = QGraphicsPixmapItem(image)
+                image.setScale(size)
+                image.setOffset(QPointF(x, y) / self.scan_area._size)
+                image.setZValue(0)
+                self.scan_area.scene().addItem(image)
+        except ValueError as e:
+            print(e)
+
+        # Check for more tasks in current list
         if len(self.current_task_set.todo) == 0:
             self.current_task_set.setStatus(TaskSetStatus.Finished)
             if self.current_task_set.index < len(self.task_set_list.task_sets) - 1:
@@ -554,9 +686,20 @@ class Ui_MainWindow(QMainWindow):
             else:
                 self.current_task_set = None
 
-        if not self.paused:
-            self.start_task()
-    
+        # Check for paused and stopped
+        if self.paused:
+            self.running = False
+        else:
+            if self.stopped:
+                self.current_task_set.setStatus(TaskSetStatus.Error)
+                self.current_task_set = None
+                self.play.setChecked(False)
+                self.play.toggle()
+                self.running = False
+                self.stopped = False
+            else:
+                self.start_task()
+        
     def add_task_set(self):
         """
             Add a new task set to the task list.
@@ -581,7 +724,7 @@ class Ui_MainWindow(QMainWindow):
         task_set_data = TaskSetData(name=self.task_set_name.text(),
                                     size=self.scan_size.value,
                                     x_offset=self.x_offset.value,
-                                    y_offset=self.y_offset.value,
+                                    y_offset=-self.y_offset.value,
                                     bias=self.bias.value,
                                     set_point=self.set_point.value,
                                     line_time=self.line_time.value,
@@ -595,6 +738,45 @@ class Ui_MainWindow(QMainWindow):
                                     time_to_finish=self.time_to_finish.text().split(": ")[1])
 
         self.task_set_list.add_task_set(task_set_data)
+        self.task_set_list.task_sets[-1].hover_preview.connect(self.task_rect_preview)
+        self.task_set_list.task_sets[-1].remove_preview.connect(self.remove_rect_preview)
+
+    def task_rect_preview(self, rects: list):
+        for rect_data in rects:
+            x, y, size = rect_data
+            self._rect_previews.append(RectPreview(QRect(x, y, size, size)))
+            self.scan_area.scene().addItem(self._rect_previews[-1])
+
+    def remove_rect_preview(self):
+        if len(self._rect_previews) != 0 :
+            for rect in self._rect_previews:
+                self.scan_area.scene().removeItem(rect)
+        self._rect_previews = list()
+
+    def paint_current_task_rect(self):
+        size = self.current_task.inner.size.to_float() * 1e9
+        x = self.current_task.inner.x_offset.to_float() * 1e9 - (size / 2)
+        y = self.current_task.inner.y_offset.to_float() * 1e9 - (size / 2)
+        self.current_task_rect = RectPreview(QRect(x, y, size, size), color=QColor(66, 219, 99))
+        self.current_task_rect.setZValue(0.5)
+        self.scan_area.scene().addItem(self.current_task_rect)
+
+    def remove_current_task_rect(self):
+        self.scan_area.scene().removeItem(self.current_task_rect)
+        self.current_task_rect = None
+
+    def task_mode_changed(self):
+        match self.task_mode.currentText():
+            case 'Image':
+                self.sts_options.setHidden(True)
+                self.sweep_options.setHidden(False)
+                self.scan_area.spec_line.setVisible(False)
+            case 'Spectroscopy with image':
+                self.options_spacing.changeSize(20, 0, QSizePolicy.Minimum, QSizePolicy.Minimum)
+                self.sts_options.setHidden(False)
+                self.sweep_options.setHidden(True)
+                self.options_spacing.changeSize(20, 40, QSizePolicy.Minimum, QSizePolicy.Expanding)
+                self.scan_area.spec_line.setVisible(True)
 
     def update_scan_size(self):
         """
@@ -607,7 +789,8 @@ class Ui_MainWindow(QMainWindow):
                 The scanning area size is represented as a rectangle (scan_rect) on the scan area display. This method
                 updates the scan_rect size to match the value entered by the user.
         """
-        newRect = self.scan_area.scan_rect.scene_inner_rect()
+        old_rect = self.scan_area.scan_rect.scene_inner_rect()
+        newRect = QRectF(old_rect)
         newRect.setWidth(self.scan_size.value.to_float()*1e9)
         newRect.setHeight(self.scan_size.value.to_float()*1e9)
         dx = self.scan_area.scan_rect.rect().center().x() - newRect.center().x()
@@ -615,6 +798,8 @@ class Ui_MainWindow(QMainWindow):
         newRect.translate(dx, dy)
         self.scan_area.scan_rect.setRect(newRect)
         self.scan_area.scan_rect.updateHandlesPos()
+        scale = newRect.width() / old_rect.width()
+        self.scan_area._scene.adjust_spec_line.emit(scale)
         self.update_time_to_finish()
         
     def update_scan_position(self):
@@ -629,7 +814,15 @@ class Ui_MainWindow(QMainWindow):
                 The scanning area (scan_rect) represents the area that will be scanned during the task execution. This
                 method updates the scan_rect position to match the X and Y offset values entered by the user.
         """
-        self.scan_area.scan_rect.setPos(self.x_offset.value.to_float()*1e9, self.y_offset.value.to_float()*1e9)
+        self.scan_area.scan_rect.setPos(self.x_offset.value.to_float()*1e9, -self.y_offset.value.to_float()*1e9)
+
+    def bias_changed(self):
+        if np.sign(self.bias.value.to_float()) != np.sign(self.set_point.value.to_float()):
+            self.set_point.setValue(ExponentialNumber(-self.set_point.value.sig, self.set_point.value.exp))
+
+    def set_point_changed(self):
+        if np.sign(self.bias.value.to_float()) != np.sign(self.set_point.value.to_float()):
+            self.bias.setValue(ExponentialNumber(-self.bias.value.sig, self.bias.value.exp))
 
     def scan_rect_moved(self):
         """
@@ -649,7 +842,7 @@ class Ui_MainWindow(QMainWindow):
         x = pos.x()
         y = pos.y()
         self.x_offset.setValue(ExponentialNumber(x, -9))
-        self.y_offset.setValue(ExponentialNumber(y, -9))
+        self.y_offset.setValue(ExponentialNumber(-y, -9))
         self.scan_size.setValue(ExponentialNumber(scan_rect.width(), -9))
         
     def update_time_to_finish(self):
@@ -664,7 +857,10 @@ class Ui_MainWindow(QMainWindow):
                 execution, the time required to capture each image (line time), and the number of repetitions for each
                 task set.
         """
-        N = abs((self.sweep_start.value.to_float() - self.sweep_stop.value.to_float()) // self.sweep_step.value.to_float())
+        if self.sweep_parameter.currentText() != 'None':
+            N = abs((self.sweep_start.value.to_float() - self.sweep_stop.value.to_float()) // self.sweep_step.value.to_float())
+        else:
+            N = 1
         N *= self.repetitions.value()
         total_time = 2 * self.line_time.value.to_float() * float(self.lines_per_frame.currentText()) * N
         
@@ -690,7 +886,10 @@ class Ui_MainWindow(QMainWindow):
                 The total number of images is calculated based on the sweep range defined by the user (start, stop, and
                 step values) and the number of repetitions for each task set.
         """
-        N = abs((self.sweep_start.value.to_float() - self.sweep_stop.value.to_float()) // self.sweep_step.value.to_float())
+        if self.sweep_parameter.currentText() != 'None':
+            N = abs((self.sweep_start.value.to_float() - self.sweep_stop.value.to_float()) // self.sweep_step.value.to_float())
+        else:
+            N = 1
         N *= self.repetitions.value()
         self.total_images.setText(f"Total images: {int(N)}")
 
@@ -770,25 +969,3 @@ class Ui_MainWindow(QMainWindow):
                 self.set_sweep_enabled(True)
                 self.set_sweep_vals(self.scan_size.value, lower=ExponentialNumber(2.5, -12), upper=ExponentialNumber(3, -6))
                 self.set_sweep_units("m")
-
-    def set_enable_spectroscopy(self):
-        """
-            Enable or disable spectroscopy options based on the selected mode.
-
-            This method is triggered when the user selects a different spectroscopy mode from the spectroscopy mode combo
-            box. It enables or disables spectroscopy options (initial voltage, final voltage, step voltage, and delay time)
-            based on the selected mode.
-
-            Note:
-                Spectroscopy allows performing measurements at different voltage points. The spectroscopy options are
-                enabled or disabled depending on the selected spectroscopy mode (e.g., "Point," "Line," "Region," etc.).
-        """
-        match self.sts_mode.currentText():
-            case 'None':
-                val = False
-            case _:
-                val = True
-        self.sts_initial_voltage.setEnabled(val)
-        self.sts_final_voltage.setEnabled(val)
-        self.sts_step_voltage.setEnabled(val)
-        self.sts_delay_time.setEnabled(val)
