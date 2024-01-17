@@ -1,15 +1,15 @@
 <h1 align="center">
-Åtom 
+pyxm 
 </h1>
 
-![atom app](https://github.com/bhc1010/atom/blob/master/sam_9000.PNG?raw=true)
+![pyxm app](https://github.com/bhc1010/pyxm/blob/master/sam_9000.PNG?raw=true)
 
-Atom is a task management system for scanning tunneling microscopes written in Python 3.11, with the PySide6 GUI library.
+pyxm is a task management system for scanning tunneling microscopes written in Python 3.11, with the PySide6 GUI library.
 It aims to provide a simple and intuitive interface for users to queue up multiple sets of images and spectroscopy tasks to preform in a user-defined order.
 TCP/IP commands can be customized through a JSON file to fit the needs of any system.
-Atom is designed to communicate with an already existing STM controller and cannot control an STM directly.
+pyxm is designed to communicate with an already existing STM controller and cannot control an STM directly.
 
-**⚠️ Atom is currently in an experimental stage and only been tested on the RHK PanScan Freedom system. ⚠️**
+**⚠️ pyxm is currently in an experimental stage and only been tested on the RHK PanScan Freedom system. ⚠️**
 
 ## Features
 
@@ -20,9 +20,6 @@ Atom is designed to communicate with an already existing STM controller and cann
 - [ ] Save task sets for reuse or documentation.
 - [ ] Customize TCP/IP commands to accomodate syntax used by the users STM controller.
 
-## Installation
-The latest release of Atom can be downloaded from the [releases](https://github.com/bhc1010/atom/releases) section.
-
 ## Build from source
 
 1. Clone the repository:
@@ -32,11 +29,11 @@ git clone https://github.com/bhc1010/sam9000
 
 2. Install the required Python packages using pip:
 ```console
-cd atom
+cd pyxm
 pip install -r requirements.txt
 ```
 
-3. Run Atom:
+3. Run pyxm:
 ```console
 python src/main.py
 ```
@@ -59,7 +56,7 @@ _Example of `stm_commands.json` for the RHK PanScanFreedom via the R9_
 
 ## Contributing
 
-We welcome contributions to Atom! If you find a bug, have an enhancement idea, or want to add new features, please follow these steps:
+We welcome contributions to pyxm! If you find a bug, have an enhancement idea, or want to add new features, please follow these steps:
 
 1. Fork the repository to your GitHub account.
 2. Create a new branch with a descriptive name for your changes.
