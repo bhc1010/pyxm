@@ -2,25 +2,25 @@
 pyxm 
 </h1>
 
-![pyxm app](https://github.com/bhc1010/pyxm/assets/pyxm.png?raw=true)
+![pyxm app](https://github.com/bhc1010/pyxm/blob/main/assets/pyxm.png)
 
-pyxm is a task management system for scanning tunneling microscopes written in Python 3.11, with the PySide6 GUI library.
+pyxm is a data acquisition manager for scanning tunneling, scanning probe, or atomic force microscopes written in Python 3.11 with the PySide6 GUI library.
 It aims to provide a simple and intuitive interface for users to queue up multiple sets of images and spectroscopy tasks to preform in a user-defined order.
 TCP/IP commands can be customized through a JSON file to fit the needs of any system.
-pyxm is designed to communicate with an already existing STM controller and cannot control an STM directly.
+pyxm is designed to communicate with an already existing microscopy controller and cannot control a microscope directly.
 
-**⚠️ pyxm is currently in an experimental stage and only been tested on the RHK PanScan Freedom system. ⚠️**
+**⚠️ pyxm is currently in an experimental stage and only been tested on the RHK PanScan Freedom STM in the Hollen Lab, at the University of New Hampshire. ⚠️**
 
 ## Features
 
 - [x] Connect to an STM device using TCP/IP sockets
 - [x] Fine-tuned control of STM parameters with easy-to-use input fields.
-- [x] Simultaneous execution and creation of tasks allowing for versatile experimentation and efficient workflow management.
-- [ ] Preview images from a task inside scan area.
+- [x] Simultaneous execution and creation of tasks allowing for versatile experimentation and an efficient workflow.
+- [x] Preview images from a task inside scan area.
+- [x] Customize TCP/IP commands to accomodate syntax used by the users STM controller.
 - [ ] Save task sets for reuse or documentation.
-- [ ] Customize TCP/IP commands to accomodate syntax used by the users STM controller.
 
-## Build from source
+## Run from source
 
 1. Clone the repository:
 ```console
