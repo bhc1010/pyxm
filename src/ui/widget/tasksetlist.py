@@ -4,7 +4,7 @@ from PySide6.QtGui import Qt
 from PySide6.QtWidgets import *
 
 from core.tasksetdata import TaskSetData
-from ui.native.taskset.taskset import TaskSet
+from ui.widget.taskset.taskset import TaskSet
 
 class TaskSetList(QGroupBox):
     """
@@ -32,7 +32,7 @@ class TaskSetList(QGroupBox):
         """
         super().__init__(title, objectName=objectName)
         self.task_sets: List[TaskSet] = list()
-        self.all_tasks = list()
+        # self.all_tasks = list()
 
         self._contents = QWidget(self)
         self._scrollarea = QScrollArea()
@@ -62,7 +62,7 @@ class TaskSetList(QGroupBox):
         task_set.adjustTextWidth()
 
         self.task_sets.append(task_set)
-        self.all_tasks.extend(task_set.tasks)
+        # self.all_tasks.extend(task_set.tasks)
         self._layout.addWidget(task_set)
 
     def drop_task(self, idx):

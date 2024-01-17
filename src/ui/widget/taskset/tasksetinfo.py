@@ -43,7 +43,7 @@ class TaskSetInfo(QWidget):
         bias = QLabel(f'Bias : {data.bias}V')
         set_point = QLabel(f"Set point: {data.set_point}A")
         size = QLabel(f"Size: {data.size}m")
-        position = QLabel(f"Position: ({data.x_offset}m, {data.y_offset}m)")
+        position = QLabel(f"Position: ({data.x_offset}m, {-data.y_offset}m)")
         lines_per_frame = QLabel(f"Lines per frame: {data.lines_per_frame}")
         line_time = QLabel(f"Line time: {data.line_time.to_float()}s")
         sublayout.addWidget(bias, 0, 0)

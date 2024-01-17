@@ -1,5 +1,4 @@
 import numpy as np
-from enum import Enum
 from typing import Callable, List
 
 from PySide6 import QtCore
@@ -13,10 +12,10 @@ from core.tasksetdata import TaskSetData
 from core.taskdata import TaskData
 from core.imagedata import ImageData
 
-from ui.native.taskset.tasksetbar import TaskSetBar
-from ui.native.taskset.tasksetinput import TaskSetInput
-from ui.native.taskset.tasksetinfo import TaskSetInfo
-from ui.native.taskset.tasksetstatus import TaskSetStatus
+from ui.widget.taskset.tasksetbar import TaskSetBar
+from ui.widget.taskset.tasksetinput import TaskSetInput
+from ui.widget.taskset.tasksetinfo import TaskSetInfo
+from ui.widget.taskset.tasksetstatus import TaskSetStatus
 
 class TaskSet(QWidget):
     """
@@ -46,6 +45,10 @@ class TaskSet(QWidget):
             _task_bar_hover_anim (QPropertyAnimation): Animation for the progress bar on hover.
             _info_anim (QParallelAnimationGroup): Animation group for expanding/collapsing the detailed information.
     """
+    hover_preview = Signal(list)
+    remove_preview = Signal()
+    # selected_preview = Signal(list)
+    # remove_selected_preview = Signal()
 
     def __init__(self, name: str, data: TaskSetData, idx: int, dropFunc: Callable):
         """
@@ -194,10 +197,27 @@ class TaskSet(QWidget):
                 self._task_bar_hover_anim.setEndValue(self._task_bar.rect())
                 self._task_bar_hover_anim.start()
 
+            rects = []
+            if self.data.sweep_parameter is TaskSetData.SweepParameter.size:
+                for task in self.tasks:
+                    rect_size = task.inner.size.to_float() * 1e9
+                    rect_x = task.inner.x_offset.to_float() * 1e9 - (rect_size / 2)
+                    rect_y = task.inner.y_offset.to_float() * 1e9 - (rect_size / 2) 
+                    rects.append((rect_x, rect_y, rect_size))    
+            else:
+                if len(self.tasks) > 0:
+                    rect_size = self.tasks[0].inner.size.to_float() * 1e9
+                    rect_x = self.tasks[0].inner.x_offset.to_float() * 1e9 - (rect_size / 2)
+                    rect_y = self.tasks[0].inner.y_offset.to_float() * 1e9 - (rect_size / 2)
+                    rects.append((rect_x, rect_y, rect_size))
+
+            self.hover_preview.emit(rects)
+
         if ev.type() == QtCore.QEvent.Leave:
             if not self._selected:
                 self._task_bar_hover_anim.setEndValue(QRect(self._task_bar._padding, self._task_bar._padding, self._content.size().width() - 2*self._task_bar._padding, self._content.size().height() - 2*self._task_bar._padding))
                 self._task_bar_hover_anim.start()
+            self.remove_preview.emit()
             
         if ev.type() == QtCore.QEvent.MouseButtonPress:
             self._lastpos = ev.pos()

@@ -147,21 +147,6 @@ class ScientificSpinBox(QLineEdit):
             Args:
                 event (QKeyEvent): The key event object.
 
-            Example:
-                The following example shows how to interact with the ScientificSpinBox using arrow keys:
-
-                - Pressing the Up Arrow will increment the value by a predefined step.
-                - Pressing the Down Arrow will decrement the value by a predefined step.
-                - Pressing the Left Arrow will move the cursor left.
-                - Pressing the Right Arrow will move the cursor right.
-
-                .. code-block:: python
-
-                    spin_box = ScientificSpinBox()
-                    spin_box.setText("123.456 k")
-                    spin_box.keyPressEvent(QKeyEvent(QEvent.KeyPress, Qt.Key_Up, Qt.NoModifier))
-                    # Output: The spin box value will be updated to '123.457 k'
-
             Note:
                 - The method also handles selection-based value modifications when a specific part of the value
                 is selected before pressing the arrow keys.
@@ -285,19 +270,6 @@ class ScientificSpinBox(QLineEdit):
             Args:
                 emit (bool, optional): If True, the `value_changed` signal will be emitted after updating the text.
                                     Defaults to True.
-
-            Example:
-                The following example shows how to update the displayed text in the ScientificSpinBox:
-
-                .. code-block:: python
-
-                    spin_box = ScientificSpinBox()
-                    spin_box.value = ExponentialNumber(123.456, exponent=3)  # 123.456 k
-                    spin_box.units = "m/s"
-                    spin_box.update_text()
-
-                    print(spin_box.text())
-                    # Output: '+123.456 km/s'
 
             Note:
                 - The method assumes that the `value` attribute holds an ExponentialNumber object, which consists of

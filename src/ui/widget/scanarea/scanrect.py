@@ -69,12 +69,16 @@ class ScanRectItem(QGraphicsRectItem):
         self.mousePressPos = None
         self.mousePressRect = None
         self.handle_color = QColor(0,0,0)
-        self.setAcceptHoverEvents(True)
-        self.setFlag(QGraphicsItem.ItemIsMovable, True)
-        self.setFlag(QGraphicsItem.ItemIsSelectable, True)
+        self.toggle_flags(False)
         self.setFlag(QGraphicsItem.ItemSendsGeometryChanges, True)
-        self.setFlag(QGraphicsItem.ItemIsFocusable, True)
         self.updateHandlesPos()
+
+    def toggle_flags(self, val):
+        self.setAcceptHoverEvents(val)
+        self.setFlag(QGraphicsItem.ItemIsMovable, val)
+        self.setFlag(QGraphicsItem.ItemIsSelectable, val)
+        self.setFlag(QGraphicsItem.ItemIsFocusable, val)
+
 
     def handleAt(self, point):
         """
@@ -123,9 +127,9 @@ class ScanRectItem(QGraphicsRectItem):
         Args:
             mouseEvent (QGraphicsSceneMouseEvent): The mouse press event.
         """
+        self.mousePressPos = mouseEvent.pos()
         self.handleSelected = self.handleAt(mouseEvent.pos())
         if self.handleSelected:
-            self.mousePressPos = mouseEvent.pos()
             self.mousePressRect = self.boundingRect()
         super().mousePressEvent(mouseEvent)
 
@@ -141,11 +145,12 @@ class ScanRectItem(QGraphicsRectItem):
         else:
             super().mouseMoveEvent(mouseEvent)
             
-            o = self.handleSize + self.handleSpace
             bbox = self.scene_inner_rect()
             offset = 0.5*bbox.width()
             pos = bbox.center()
             x, y = pos.x(), pos.y()
+
+            # Keep within bounds
             limit_lower = self.scene_limits[0] + offset
             limit_upper = self.scene_limits[1] - offset
             scene_limit_lower = self.scene_limits[0] + offset
@@ -302,6 +307,8 @@ class ScanRectItem(QGraphicsRectItem):
         if rect.width() > self.min_size:
             old_rect = self.rect()
             old_pos = self.pos()
+
+            # Set new rect
             self.setRect(rect)
             if Qt.KeyboardModifier.ShiftModifier not in mouseEvent.modifiers():
                 self.setPos(self.mapToScene(new_center))
@@ -309,6 +316,10 @@ class ScanRectItem(QGraphicsRectItem):
                 self.setRect(old_rect)
                 self.setPos(old_pos)
             self.updateHandlesPos()
+
+            # Resize specline
+            scale = self.rect().width() / old_rect.width()
+            self.scene().adjust_spec_line.emit(scale)
 
     def shape(self):
         """
@@ -336,7 +347,7 @@ class ScanRectItem(QGraphicsRectItem):
         pen = QPen(QColor(102, 157, 246), 3.0, Qt.SolidLine)
         pen.setCosmetic(True)
 
-        painter.setBrush(QBrush(QColor(102, 157, 246, 5)))
+        painter.setBrush(QBrush(QColor(102, 157, 246, 25)))
         painter.setPen(pen)
         painter.drawRect(self.rect())
 

@@ -3,7 +3,7 @@ from PySide6.QtGui import *
 from PySide6.QtCore import *
 from PySide6.QtWidgets import *
 
-from ui.native.taskset.tasksetstatus import TaskSetStatus
+from ui.widget.taskset.tasksetstatus import TaskSetStatus
 
 class TaskSetBar(QWidget):
     """

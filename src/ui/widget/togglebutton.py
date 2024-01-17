@@ -20,7 +20,7 @@ class ToggleButton(QPushButton):
             _icon (QIcon): The icon for the button.
     """
 
-    def __init__(self, objectName, unchecked='#fff', checked="#9badca"):
+    def __init__(self, objectName, unchecked='#fff', checked="#9badca", toggle=True):
         """
             Initialize the ToggleButton.
 
@@ -36,7 +36,7 @@ class ToggleButton(QPushButton):
 
         self._icon = fa.icon(f'fa5s.{self.objectName()}', color=self._unchecked_color)
         self.setIcon(self._icon)
-        self.setCheckable(True)
+        self.setCheckable(toggle)
 
         self.clicked.connect(self.toggle)
 
@@ -51,6 +51,10 @@ class ToggleButton(QPushButton):
         """
         self._icon = fa.icon(f'fa5s.{self.objectName()}', color=color)
         self.setIcon(self._icon)
+
+    def set_checked(self, val: bool):
+        self.setChecked(val)
+        self.toggle()
 
     def toggle(self):
         """

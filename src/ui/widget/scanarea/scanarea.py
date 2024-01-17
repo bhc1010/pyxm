@@ -1,14 +1,19 @@
-import PySide6.QtCore
 import PySide6.QtGui
+import PySide6.QtWidgets
 import numpy as np
 
 from PySide6.QtCore import *
 from PySide6.QtGui import *
 from PySide6.QtWidgets import *
 
-from ui.native.scanrect import ScanRectItem
-from ui.native.scantoolbar import ScanAreaToolBar
-from ui.native.togglebutton import ToggleButton
+from ui.widget.scanarea.scanrect import ScanRectItem
+from ui.widget.scanarea.specline import SpecLineItem
+from ui.widget.scanarea.speclinehandle import SpecLineHandle
+from ui.widget.scanarea.scantoolbar import ScanAreaToolBar
+from ui.widget.scanarea.toolmode import ToolMode
+
+class GraphicsScene(QGraphicsScene):
+    adjust_spec_line = Signal(float)
 
 class ScanArea(QGraphicsView):
     """
@@ -37,32 +42,16 @@ class ScanArea(QGraphicsView):
         self._grid_size = 10
         self._zoom = 0
         self._size = size
-        self._scene = QGraphicsScene()
+        self._scene = GraphicsScene()
         self._scene.setSceneRect(QRect(-size/2, -size/2, size, size))
         self.setScene(self._scene)
         
-        move = ToggleButton(objectName='arrows-alt', unchecked="#000", checked="#ff964f")
-        move.setStyleSheet('QPushButton {background: transparent; border: 0px}')
-        moveP = QGraphicsProxyWidget()
-        moveP.setWidget(move)
-        
-        edit = ToggleButton(objectName='vector-square', unchecked="#000", checked="#ff964f")
-        edit.setStyleSheet('QPushButton {background: transparent; border: 0px}')
-        editP = QGraphicsProxyWidget()
-        editP.setWidget(edit)
-        
-        toolbar_layout = QGraphicsLinearLayout(Qt.Orientation.Vertical)
-        toolbar_layout.addItem(moveP)
-        toolbar_layout.addItem(editP)
-        
-        self.button = QGraphicsWidget()
-        self.button.setLayout(toolbar_layout)
-        self.button.setFlag(QGraphicsItem.ItemIgnoresTransformations)
-        self.button.setZValue(1)
-        # self.button.hide()
-        self.button.setPos(-self._size/2 + 12.5, -self._size/2 + 12.5)
-        
-        self._scene.addItem(self.button)
+        self.toolbar = ScanAreaToolBar()
+        self.toolbar.setPos(-self._size/2 + 12.5, -self._size/2 + 12.5)
+        self.toolbar._move_clicked.connect(self.enable_drag)
+        self.toolbar._edit_rect_clicked.connect(self.enable_rect)
+        self.toolbar._edit_spec_clicked.connect(self.enable_spec)
+        self._scene.addItem(self.toolbar)
 
         self.setMouseTracking(True)
         self.setTransformationAnchor(QGraphicsView.AnchorUnderMouse)
@@ -75,6 +64,11 @@ class ScanArea(QGraphicsView):
         self.draw_grid()
         
         self.scan_rect = ScanRectItem(init_rect = QRectF(-50, -50, 100, 100), scene_limits = [-self._size/2, self._size/2], min_size=0.120)
+        self.spec_line = SpecLineItem(parent=self.scan_rect)
+        self._scene.adjust_spec_line.connect(self.spec_line.update_aspect)
+        self._new_spec_line = False
+
+        self.scan_rect.setZValue(0.99)
         self.scene().addItem(self.scan_rect)
 
         self.fitInView(self._scene.sceneRect(), Qt.KeepAspectRatio)
@@ -132,14 +126,20 @@ class ScanArea(QGraphicsView):
             self.scan_rect.handleSize /= self.zoom_factor
             self.scan_rect.handleSpace /= self.zoom_factor
             self.scan_rect.updateHandlesPos()
+
+            self.spec_line._line_highlight_size /= self.zoom_factor
+            self.spec_line._handle_size /= self.zoom_factor
+            self.spec_line.update_handles()
         else:
             self._zoom = 0
             self.fitInView(self._scene.sceneRect(), Qt.KeepAspectRatio)
             self.scan_rect.handleSize = ScanRectItem._handleSize
             self.scan_rect.handleSpace = -int(0.5*ScanRectItem._handleSize)
+            self.spec_line._line_highlight_size = SpecLineItem._line_highlight_size
+            self.spec_line._handle_size = SpecLineHandle._handle_size
 
-        self.updateCurrentView()
-        self.update_tool_bar()
+        self.update_current_view()
+        self.update_toolbar()
 
     def showEvent(self, event):
         """
@@ -150,8 +150,19 @@ class ScanArea(QGraphicsView):
         Args:
             event (QShowEvent): The show event.
         """
-        self.updateCurrentView()
+        self.update_current_view()
         
+    def mousePressEvent(self, event: QMouseEvent) -> None:
+        if self.toolbar.mode == ToolMode.SpecLine:
+            sp = self.mapToScene(event.pos())
+            item = self._scene.itemAt(sp, self.viewportTransform())
+            if item not in self.toolbar.childItems():
+                if item is not self.spec_line and item not in self.spec_line.childItems():
+                    self.spec_line.set_initial(sp)
+                    self._new_spec_line = True
+
+        super().mousePressEvent(event)
+
     def mouseMoveEvent(self, event: QMouseEvent) -> None:
         """
         Mouse move event handler.
@@ -164,10 +175,16 @@ class ScanArea(QGraphicsView):
         """
         super().mouseMoveEvent(event)
         if Qt.MouseButton.LeftButton in event.buttons():
-            if self.itemAt(event.pos()) == self.scan_rect:
-                self.scan_rect_moved.emit()
-            else:
-                self.update_tool_bar()
+            match self.toolbar.mode:
+                case ToolMode.Move:
+                    self.update_toolbar()
+                case ToolMode.ScanRect:
+                    if self.itemAt(event.pos()) == self.scan_rect:
+                        self.scan_rect_moved.emit()
+                case ToolMode.SpecLine:
+                    if self._new_spec_line:
+                        self.spec_line.set_final(self.mapToScene(event.pos()))
+
         
     def mouseReleaseEvent(self, event) -> None:
         """
@@ -178,21 +195,12 @@ class ScanArea(QGraphicsView):
         Args:
             event (QMouseEvent): The mouse release event.
         """
-        self.updateCurrentView()
+        if self._new_spec_line:
+            self._new_spec_line = False
+        self.update_current_view()
         return super().mouseReleaseEvent(event)
-
-    def toggleDragMode(self):
-        """
-        Toggle drag mode.
-
-        This method toggles the drag mode of the QGraphicsView between scrolling and no drag.
-        """
-        if self.dragMode() == QGraphicsView.ScrollHandDrag:
-            self.setDragMode(QGraphicsView.NoDrag)
-        else:
-            self.setDragMode(QGraphicsView.ScrollHandDrag)
     
-    def updateCurrentView(self):
+    def update_current_view(self):
         """
         Update the current view.
 
@@ -200,7 +208,7 @@ class ScanArea(QGraphicsView):
         """
         self._current_view = self.mapToScene(self.viewport().rect()).boundingRect()
         
-    def update_tool_bar(self):
+    def update_toolbar(self):
         """
         Update the position of the tool bar.
 
@@ -211,4 +219,33 @@ class ScanArea(QGraphicsView):
         """
         padding = self.mapToScene(QPoint(10, 10))
         top_left = self.mapToScene(self.viewport().rect()).boundingRect().topLeft()
-        self.button.setPos((top_left + padding)/2)
+        self.toolbar.setPos((top_left + padding)/2)
+
+    def enable_drag(self):
+        if self.toolbar.mode == ToolMode.Move:
+            self.setDragMode(QGraphicsView.ScrollHandDrag)
+        else:
+            self.setCursor(Qt.ArrowCursor)
+            self.setDragMode(QGraphicsView.NoDrag)
+        
+        self.scan_rect.toggle_flags(False)
+        self.spec_line.toggle_flags(False)
+
+    def enable_rect(self):
+        if self.toolbar.mode == ToolMode.ScanRect:
+            self.scan_rect.toggle_flags(True)
+        else: 
+            self.scan_rect.toggle_flags(False)
+
+        self.setCursor(Qt.ArrowCursor)
+        self.setDragMode(QGraphicsView.NoDrag)
+        self.spec_line.toggle_flags(False)
+
+    def enable_spec(self):
+        if self.toolbar.mode == ToolMode.SpecLine:
+            self.spec_line.toggle_flags(True)
+        else:
+            self.spec_line.toggle_flags(False)
+        self.setCursor(Qt.ArrowCursor)
+        self.setDragMode(QGraphicsView.NoDrag)
+        self.scan_rect.toggle_flags(False)

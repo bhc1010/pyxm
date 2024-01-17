@@ -1,0 +1,19 @@
+{
+    "start_scan_of_type" : "StartProcedure, ",
+    "stop_scan_of_type" : "StopProcedure, ",
+
+    "set_bias" : "SetSWParameter, STM Bias, Value, ",
+    "set_setpoint" : "SetSWParameter, STM Set Point, Value, ",
+    "set_scan_size" : "SetSWParameter, Scan Area Window, Scan Area Size, ",
+    "set_scan_pos_x" : "SetSWParameter, Scan Area Window, X Offset, ",
+    "set_scan_pos_y" : "SetSWParameter, Scan Area Window, Y Offset, ",
+    "set_line_time" : "SetSWParameter, Scan Area Window, Line Time, ",
+    "set_resolution" : "SetSWSubItemParameter, Scan Area Window, Scan Settings, Lines Per Frame, ",
+    "set_scan_count" : "SetSWSubItemParameter, Scan Area Window, Scan Settings, Scan Count, ",
+    "set_spec_line_size" : "SetSWParameter, Scan Area Window, SpecLine Size, ",
+    "set_spec_line_x_offset" : "SetSWParameter, Scan Area Window, SpecLine X Offset, ",
+    "set_spec_line_y_offset" : "SetSWParameter, Scan Area Window, SpecLine Y Offset, ",
+    "set_spec_line_angle" : "SetSWParameter, Scan Area Window, SpecLine Angle, ",
+    
+    "get_save_path" : "GetSWSubItemParameter, Scan Area Window, MeasureSave, Save Path\n"
+}

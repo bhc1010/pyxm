@@ -14,7 +14,7 @@ QApplication.setAttribute(QtCore.Qt.ApplicationAttribute.AA_ShareOpenGLContexts)
 app = QApplication(sys.argv)
 
 # Load custom CSS style from a file
-style = Path('src/ui/style/style.css').read_text()
+style = Path('src/ui/style.css').read_text()
 
 # Set up the QDarkTheme with custom colors and additional CSS style
 qdarktheme.setup_theme(
